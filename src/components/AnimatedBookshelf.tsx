@@ -18,49 +18,47 @@ const GENRES = [
 ];
 
 interface BookDef {
-  width: number;
+  widthFr: number; // flex fraction
   height: number;
   color: string;
   accent: string;
   hasStripes: boolean;
 }
 
-// Generate a row of books that tile seamlessly
-function generateBooks(count: number, seed: number): BookDef[] {
-  const colors = [
-    { color: "#704214", accent: "#c5a55a" },
-    { color: "#722f37", accent: "#d4a0a7" },
-    { color: "#5c3317", accent: "#b89a4a" },
-    { color: "#8b5e34", accent: "#f5efe0" },
-    { color: "#3e1f0d", accent: "#c5a55a" },
-    { color: "#8c3a44", accent: "#f0d0d4" },
-    { color: "#1a1a2e", accent: "#b89a4a" },
-    { color: "#2d4a3e", accent: "#a8c5b0" },
-    { color: "#4a2d5e", accent: "#c5a0d4" },
-    { color: "#b89a4a", accent: "#3e1f0d" },
-    { color: "#5e3a2d", accent: "#d4b896" },
-    { color: "#2d3a5e", accent: "#a0b4d4" },
-  ];
+const PALETTE = [
+  { color: "#704214", accent: "#c5a55a" },
+  { color: "#722f37", accent: "#d4a0a7" },
+  { color: "#5c3317", accent: "#b89a4a" },
+  { color: "#8b5e34", accent: "#f5efe0" },
+  { color: "#3e1f0d", accent: "#c5a55a" },
+  { color: "#8c3a44", accent: "#f0d0d4" },
+  { color: "#1a1a2e", accent: "#b89a4a" },
+  { color: "#2d4a3e", accent: "#a8c5b0" },
+  { color: "#4a2d5e", accent: "#c5a0d4" },
+  { color: "#b89a4a", accent: "#3e1f0d" },
+  { color: "#5e3a2d", accent: "#d4b896" },
+  { color: "#2d3a5e", accent: "#a0b4d4" },
+];
 
+function generateBooks(count: number, seed: number): BookDef[] {
   const books: BookDef[] = [];
   for (let i = 0; i < count; i++) {
-    const ci = (i + seed) % colors.length;
-    const w = 14 + ((i * 7 + seed * 3) % 12);
-    const h = 60 + ((i * 5 + seed) % 18);
+    const ci = (i + seed) % PALETTE.length;
+    const fr = 3 + ((i * 7 + seed * 3) % 5); // flex: 3-7
+    const h = 55 + ((i * 5 + seed) % 25);
     books.push({
-      width: w,
+      widthFr: fr,
       height: h,
-      color: colors[ci].color,
-      accent: colors[ci].accent,
+      color: PALETTE[ci].color,
+      accent: PALETTE[ci].accent,
       hasStripes: i % 3 === 0,
     });
   }
   return books;
 }
 
-// How many rows and books per row
-const ROWS = 5;
-const BOOKS_PER_ROW = 20;
+const ROWS = 6;
+const BOOKS_PER_ROW = 40;
 
 export function AnimatedBookshelf() {
   const [activeBook, setActiveBook] = useState<{ row: number; col: number } | null>(null);
@@ -68,8 +66,8 @@ export function AnimatedBookshelf() {
   const [typedText, setTypedText] = useState("");
   const [phase, setPhase] = useState<"idle" | "rising" | "typing" | "holding" | "falling">("idle");
   const timeoutRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
+  const bookRefs = useRef<Map<string, HTMLDivElement>>(new Map());
 
-  // Precomputed rows
   const [rows] = useState(() =>
     Array.from({ length: ROWS }, (_, i) => generateBooks(BOOKS_PER_ROW, i * 7))
   );
@@ -88,7 +86,7 @@ export function AnimatedBookshelf() {
     }, 700);
   }, []);
 
-  // Typing effect
+  // Typing
   useEffect(() => {
     if (phase !== "typing") return;
     let i = 0;
@@ -129,136 +127,136 @@ export function AnimatedBookshelf() {
 
   return (
     <div className="absolute inset-0 overflow-hidden pointer-events-none">
-      {rows.map((books, rowIdx) => (
-        <div
-          key={rowIdx}
-          className="flex items-end justify-center gap-[2px]"
-          style={{
-            height: `${100 / ROWS}%`,
-            borderBottom: "2px solid rgba(92,51,23,0.08)",
-            paddingLeft: rowIdx % 2 === 0 ? 0 : 12,
-          }}
-        >
-          {books.map((book, colIdx) => {
-            const isActive =
-              activeBook?.row === rowIdx && activeBook?.col === colIdx;
-            const isRising = isActive && (phase === "rising" || phase === "typing" || phase === "holding");
-            const isFalling = isActive && phase === "falling";
-            const showBubble = isActive && (phase === "typing" || phase === "holding");
+      {/* Genre bubble - rendered as portal-like at top level so it's not clipped */}
+      {activeBook && (phase === "typing" || phase === "holding") && (() => {
+        const el = bookRefs.current.get(`${activeBook.row}-${activeBook.col}`);
+        if (!el) return null;
+        const rect = el.getBoundingClientRect();
+        const parentRect = el.closest("[data-shelf]")?.getBoundingClientRect();
+        if (!parentRect) return null;
+        const left = rect.left - parentRect.left + rect.width / 2;
+        const top = rect.top - parentRect.top - 12;
+        const book = rows[activeBook.row][activeBook.col];
 
-            return (
-              <div
-                key={colIdx}
-                className="relative flex-shrink-0"
-                style={{ width: book.width }}
+        return (
+          <div
+            className="absolute z-30 whitespace-nowrap"
+            style={{
+              left,
+              top,
+              transform: "translate(-50%, -100%)",
+              animation: "bubbleIn 0.3s ease-out both",
+            }}
+          >
+            <div
+              className="relative px-3 py-1.5 rounded-lg shadow-lg"
+              style={{
+                background: "#faf7f0",
+                border: "1px solid rgba(197,165,90,0.4)",
+                boxShadow: "0 4px 16px rgba(0,0,0,0.15)",
+              }}
+            >
+              <span
+                className="text-xs font-medium tracking-wide"
+                style={{
+                  color: book.color,
+                  fontFamily: "var(--font-playfair), serif",
+                }}
               >
-                {/* Genre bubble */}
-                {showBubble && (
-                  <div
-                    className="absolute left-1/2 -translate-x-1/2 z-20 whitespace-nowrap"
+                {typedText}
+                {phase === "typing" && (
+                  <span
+                    className="inline-block w-[1.5px] h-3 ml-0.5 -mb-0.5"
                     style={{
-                      bottom: book.height + 28,
-                      animation: "bubbleIn 0.3s ease-out both",
-                    }}
-                  >
-                    <div
-                      className="relative px-3 py-1.5 rounded-lg shadow-lg"
-                      style={{
-                        background: "#faf7f0",
-                        border: "1px solid rgba(197,165,90,0.4)",
-                        boxShadow: "0 4px 16px rgba(0,0,0,0.15)",
-                      }}
-                    >
-                      <span
-                        className="text-xs font-medium tracking-wide"
-                        style={{
-                          color: book.color,
-                          fontFamily: "var(--font-playfair), serif",
-                        }}
-                      >
-                        {typedText}
-                        {phase === "typing" && (
-                          <span
-                            className="inline-block w-[1.5px] h-3 ml-0.5 -mb-0.5"
-                            style={{
-                              background: book.color,
-                              animation: "cursorBlink 0.7s step-end infinite",
-                            }}
-                          />
-                        )}
-                      </span>
-                      {/* Triangle pointer */}
-                      <div
-                        className="absolute left-1/2 -translate-x-1/2 -bottom-[6px] w-3 h-3 rotate-45"
-                        style={{
-                          background: "#faf7f0",
-                          borderRight: "1px solid rgba(197,165,90,0.4)",
-                          borderBottom: "1px solid rgba(197,165,90,0.4)",
-                        }}
-                      />
-                    </div>
-                  </div>
-                )}
-
-                {/* The book spine */}
-                <div
-                  className="mx-auto rounded-t-sm relative"
-                  style={{
-                    width: book.width,
-                    height: book.height,
-                    background: `linear-gradient(to right, ${book.color}dd, ${book.color}, ${book.color}cc)`,
-                    opacity: isActive ? 0.5 : 0.08,
-                    transform: isRising
-                      ? "translateY(-22px)"
-                      : isFalling
-                        ? "translateY(0)"
-                        : "translateY(0)",
-                    transition: isRising
-                      ? "transform 0.7s cubic-bezier(0.34, 1.56, 0.64, 1), opacity 0.3s"
-                      : isFalling
-                        ? "transform 0.7s ease-in, opacity 0.7s"
-                        : "opacity 0.5s",
-                    boxShadow: isActive
-                      ? `0 -4px 12px ${book.color}44, inset -2px 0 4px rgba(0,0,0,0.2)`
-                      : "none",
-                  }}
-                >
-                  {/* Accent stripes on spine */}
-                  {book.hasStripes && (
-                    <>
-                      <div
-                        className="absolute left-1/2 -translate-x-1/2 top-[15%] rounded-full"
-                        style={{
-                          width: "60%",
-                          height: 1,
-                          background: `${book.accent}66`,
-                        }}
-                      />
-                      <div
-                        className="absolute left-1/2 -translate-x-1/2 top-[20%] rounded-full"
-                        style={{
-                          width: "40%",
-                          height: 1,
-                          background: `${book.accent}44`,
-                        }}
-                      />
-                    </>
-                  )}
-                  {/* Title dot */}
-                  <div
-                    className="absolute left-1/2 -translate-x-1/2 top-[40%] rounded-full"
-                    style={{
-                      width: 3,
-                      height: 3,
-                      background: `${book.accent}55`,
+                      background: book.color,
+                      animation: "cursorBlink 0.7s step-end infinite",
                     }}
                   />
+                )}
+              </span>
+              <div
+                className="absolute left-1/2 -translate-x-1/2 -bottom-[6px] w-3 h-3 rotate-45"
+                style={{
+                  background: "#faf7f0",
+                  borderRight: "1px solid rgba(197,165,90,0.4)",
+                  borderBottom: "1px solid rgba(197,165,90,0.4)",
+                }}
+              />
+            </div>
+          </div>
+        );
+      })()}
+
+      <div className="w-full h-full flex flex-col" data-shelf>
+        {rows.map((books, rowIdx) => (
+          <div
+            key={rowIdx}
+            className="flex items-end w-full"
+            style={{
+              flex: 1,
+              borderBottom: "2px solid rgba(92,51,23,0.08)",
+            }}
+          >
+            {books.map((book, colIdx) => {
+              const isActive =
+                activeBook?.row === rowIdx && activeBook?.col === colIdx;
+              const isRising = isActive && (phase === "rising" || phase === "typing" || phase === "holding");
+              const isFalling = isActive && phase === "falling";
+
+              return (
+                <div
+                  key={colIdx}
+                  ref={(el) => {
+                    if (el) bookRefs.current.set(`${rowIdx}-${colIdx}`, el);
+                  }}
+                  style={{ flex: book.widthFr }}
+                >
+                  <div
+                    className="mx-[1px] rounded-t-sm"
+                    style={{
+                      height: book.height,
+                      background: `linear-gradient(to right, ${book.color}dd, ${book.color}, ${book.color}cc)`,
+                      opacity: isActive ? 0.45 : 0.07,
+                      transform: isRising
+                        ? "translateY(-24px)"
+                        : "translateY(0)",
+                      transition: isRising
+                        ? "transform 0.7s cubic-bezier(0.34, 1.56, 0.64, 1), opacity 0.3s"
+                        : isFalling
+                          ? "transform 0.7s ease-in, opacity 0.7s"
+                          : "opacity 0.5s",
+                      boxShadow: isActive
+                        ? `0 -4px 12px ${book.color}44, inset -2px 0 4px rgba(0,0,0,0.2)`
+                        : "none",
+                    }}
+                  >
+                    {book.hasStripes && (
+                      <>
+                        <div
+                          className="mx-auto mt-[15%] rounded-full"
+                          style={{
+                            width: "60%",
+                            height: 1,
+                            background: `${book.accent}66`,
+                          }}
+                        />
+                        <div
+                          className="mx-auto mt-1 rounded-full"
+                          style={{
+                            width: "40%",
+                            height: 1,
+                            background: `${book.accent}44`,
+                          }}
+                        />
+                      </>
+                    )}
+                  </div>
                 </div>
-              </div>
-            );
-          })}
-        </div>
-      ))}
+              );
+            })}
+          </div>
+        ))}
+      </div>
 
       <style jsx>{`
         @keyframes cursorBlink {
@@ -268,11 +266,11 @@ export function AnimatedBookshelf() {
         @keyframes bubbleIn {
           from {
             opacity: 0;
-            transform: translateX(-50%) translateY(8px) scale(0.9);
+            transform: translate(-50%, -100%) translateY(8px) scale(0.9);
           }
           to {
             opacity: 1;
-            transform: translateX(-50%) translateY(0) scale(1);
+            transform: translate(-50%, -100%) translateY(0) scale(1);
           }
         }
       `}</style>
