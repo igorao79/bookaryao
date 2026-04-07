@@ -1,26 +1,207 @@
 @import "tailwindcss";
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --parchment: #f5efe0;
+  --parchment-light: #faf7f0;
+  --parchment-dark: #e8dcc8;
+  --ink: #1a1a2e;
+  --ink-light: #2d2d44;
+  --sepia: #704214;
+  --sepia-light: #8b5e34;
+  --leather: #5c3317;
+  --leather-dark: #3e1f0d;
+  --gold: #c5a55a;
+  --gold-light: #d4b96e;
+  --gold-muted: #b89a4a;
+  --burgundy: #722f37;
+  --burgundy-light: #8c3a44;
+  --cream: #fdfaf3;
+  --shadow-warm: rgba(92, 51, 23, 0.12);
+  --shadow-deep: rgba(26, 26, 46, 0.18);
 }
 
 @theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+  --color-parchment: var(--parchment);
+  --color-parchment-light: var(--parchment-light);
+  --color-parchment-dark: var(--parchment-dark);
+  --color-ink: var(--ink);
+  --color-ink-light: var(--ink-light);
+  --color-sepia: var(--sepia);
+  --color-sepia-light: var(--sepia-light);
+  --color-leather: var(--leather);
+  --color-leather-dark: var(--leather-dark);
+  --color-gold: var(--gold);
+  --color-gold-light: var(--gold-light);
+  --color-gold-muted: var(--gold-muted);
+  --color-burgundy: var(--burgundy);
+  --color-burgundy-light: var(--burgundy-light);
+  --color-cream: var(--cream);
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  background: var(--parchment);
+  color: var(--ink);
+}
+
+/* Paper texture overlay */
+body::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 0;
+  opacity: 0.03;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E");
+  background-size: 256px 256px;
+}
+
+/* Custom scrollbar */
+::-webkit-scrollbar {
+  width: 8px;
+}
+::-webkit-scrollbar-track {
+  background: var(--parchment-dark);
+}
+::-webkit-scrollbar-thumb {
+  background: var(--sepia);
+  border-radius: 4px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: var(--leather);
+}
+
+/* Book card shadow */
+.book-shadow {
+  box-shadow:
+    4px 4px 0 var(--parchment-dark),
+    6px 6px 12px var(--shadow-deep);
+}
+
+.book-shadow-hover {
+  box-shadow:
+    2px 2px 0 var(--parchment-dark),
+    8px 8px 20px var(--shadow-deep);
+}
+
+/* Page edge effect on book covers */
+.book-cover-edge {
+  position: relative;
+}
+.book-cover-edge::after {
+  content: "";
+  position: absolute;
+  right: -3px;
+  top: 2px;
+  bottom: 2px;
+  width: 3px;
+  background: linear-gradient(
+    to right,
+    var(--parchment-dark),
+    transparent
+  );
+  border-radius: 0 2px 2px 0;
+}
+
+/* Decorative divider */
+.divider-ornament {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.divider-ornament::before,
+.divider-ornament::after {
+  content: "";
+  flex: 1;
+  height: 1px;
+  background: linear-gradient(
+    to right,
+    transparent,
+    var(--gold-muted),
+    transparent
+  );
+}
+
+/* Fade in animation */
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(16px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+.animate-fade-in-up {
+  animation: fadeInUp 0.5s ease-out forwards;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+.animate-fade-in {
+  animation: fadeIn 0.3s ease-out forwards;
+}
+
+/* Stagger children */
+.stagger-children > * {
+  opacity: 0;
+  animation: fadeInUp 0.5s ease-out forwards;
+}
+.stagger-children > *:nth-child(1) { animation-delay: 0.05s; }
+.stagger-children > *:nth-child(2) { animation-delay: 0.1s; }
+.stagger-children > *:nth-child(3) { animation-delay: 0.15s; }
+.stagger-children > *:nth-child(4) { animation-delay: 0.2s; }
+.stagger-children > *:nth-child(5) { animation-delay: 0.25s; }
+.stagger-children > *:nth-child(6) { animation-delay: 0.3s; }
+
+/* Shimmer loading effect */
+@keyframes shimmer {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+.skeleton {
+  background: linear-gradient(
+    90deg,
+    var(--parchment-dark) 25%,
+    var(--parchment) 50%,
+    var(--parchment-dark) 75%
+  );
+  background-size: 200% 100%;
+  animation: shimmer 1.5s ease-in-out infinite;
+  border-radius: 4px;
+}
+
+/* Genre tag */
+.genre-tag {
+  display: inline-block;
+  padding: 2px 10px;
+  font-size: 0.75rem;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  border: 1px solid var(--gold-muted);
+  color: var(--sepia);
+  border-radius: 2px;
+  transition: all 0.2s;
+}
+.genre-tag-match {
+  background: var(--gold);
+  color: var(--leather-dark);
+  border-color: var(--gold);
+  font-weight: 600;
+}
+
+/* Modal backdrop */
+.modal-backdrop {
+  background: rgba(26, 26, 46, 0.6);
+  backdrop-filter: blur(4px);
+}
+
+/* Spin animation */
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+.animate-spin {
+  animation: spin 1s linear infinite;
 }
