@@ -1,4 +1,14 @@
-export async function searchKitsu(title: string): Promise<string | null> {
+import type { BookResult } from "@/types";
+
+interface KitsuAttributes {
+  canonicalTitle?: string;
+  synopsis?: string;
+  genres?: string[];
+  posterImage?: { large?: string; medium?: string; original?: string };
+  coverImage?: { large?: string; medium?: string; original?: string };
+}
+
+export async function searchKitsu(title: string): Promise<BookResult | null> {
   try {
     const url = `https://kitsu.io/api/edge/manga?filter[text]=${encodeURIComponent(title)}&page[limit]=3`;
     const res = await fetch(url, {
@@ -7,24 +17,27 @@ export async function searchKitsu(title: string): Promise<string | null> {
     if (!res.ok) return null;
 
     const data = (await res.json()) as {
-      data?: Array<{
-        attributes?: {
-          posterImage?: { large?: string; medium?: string; original?: string };
-          coverImage?: { large?: string; medium?: string; original?: string };
-        };
-      }>;
+      data?: Array<{ attributes?: KitsuAttributes }>;
     };
 
-    const first = data?.data?.[0]?.attributes;
-    if (!first) return null;
+    const attrs = data?.data?.[0]?.attributes;
+    if (!attrs) return null;
 
-    return (
-      first.posterImage?.large ??
-      first.posterImage?.medium ??
-      first.coverImage?.large ??
-      first.coverImage?.medium ??
-      null
-    );
+    const coverUrl =
+      attrs.posterImage?.large ??
+      attrs.posterImage?.medium ??
+      attrs.coverImage?.large ??
+      null;
+
+    return {
+      title: attrs.canonicalTitle ?? title,
+      author: "Unknown",
+      description: attrs.synopsis ?? "",
+      genres: attrs.genres ?? ["Манга"],
+      coverUrl,
+      googleBooksId: null,
+      openLibraryKey: null,
+    };
   } catch {
     return null;
   }
