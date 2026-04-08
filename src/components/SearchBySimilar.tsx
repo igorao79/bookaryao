@@ -8,24 +8,6 @@ import { Toast } from "./Toast";
 import type { ToastType } from "./Toast";
 import type { SearchPrefill } from "./BookSearchModal";
 
-const GENRES = [
-  "Художественная литература",
-  "Фэнтези",
-  "Научная фантастика",
-  "Детектив",
-  "Триллер",
-  "Романтика",
-  "Ужасы",
-  "Историческая проза",
-  "Современная проза",
-  "Приключения",
-  "Философия",
-  "Психология",
-  "Саморазвитие",
-  "Биография",
-  "Наука",
-  "Поэзия",
-];
 
 interface SearchBySimilarProps {
   onClose: () => void;
@@ -40,11 +22,8 @@ export function SearchBySimilar({ onClose, prefill, onBookSaved }: SearchBySimil
   const [showReject, setShowReject] = useState(false);
   const [toast, setToast] = useState<{ message: string; type: ToastType } | null>(null);
 
-  // Genre state (only used in prefill mode)
+  // Genres passed from prefill (sent straight to the search query, no picker shown)
   const prefillGenres = prefill?.genres ?? [];
-  const extraPrefillGenres = prefillGenres.filter((g) => !GENRES.includes(g));
-  const [selectedGenres, setSelectedGenres] = useState<string[]>(prefillGenres);
-  const [customGenres, setCustomGenres] = useState<string[]>(extraPrefillGenres);
 
   const {
     recommendation,
@@ -62,34 +41,13 @@ export function SearchBySimilar({ onClose, prefill, onBookSaved }: SearchBySimil
     ? bookTitle.trim() && whatYouLiked.trim()
     : bookTitle.trim() && whatYouLiked.trim();
 
-  function toggleGenre(g: string) {
-    setSelectedGenres((prev) =>
-      prev.includes(g) ? prev.filter((x) => x !== g) : [...prev, g]
-    );
-  }
-
-  function addCustomGenre(val: string) {
-    if (!val) return;
-    if (!customGenres.includes(val) && !GENRES.includes(val)) {
-      setCustomGenres((prev) => [...prev, val]);
-    }
-    if (!selectedGenres.includes(val)) {
-      setSelectedGenres((prev) => [...prev, val]);
-    }
-  }
-
-  function removeCustomGenre(g: string) {
-    setCustomGenres((prev) => prev.filter((x) => x !== g));
-    setSelectedGenres((prev) => prev.filter((x) => x !== g));
-  }
-
   async function handleSearch() {
     await search({
       type: "similar",
       bookTitle,
       author,
-      whatYouLiked: isPrefill && selectedGenres.length > 0
-        ? `Жанры: ${selectedGenres.join(", ")}. ${whatYouLiked}`
+      whatYouLiked: isPrefill && prefillGenres.length > 0
+        ? `Жанры: ${prefillGenres.join(", ")}. ${whatYouLiked}`
         : whatYouLiked,
       rejectedBooks: [],
     });
@@ -100,7 +58,7 @@ export function SearchBySimilar({ onClose, prefill, onBookSaved }: SearchBySimil
     if (success) {
       setToast({ message: "Книга сохранена в коллекцию!", type: "success" });
       onBookSaved?.();
-      setTimeout(() => { reset(); onClose(); }, 1200);
+      setTimeout(() => onClose(), 900);
     } else {
       setToast({ message: "Не удалось сохранить. Попробуйте ещё раз.", type: "error" });
     }
@@ -166,122 +124,78 @@ export function SearchBySimilar({ onClose, prefill, onBookSaved }: SearchBySimil
     );
   }
 
-  const allGenres = [...GENRES, ...customGenres.filter((g) => !GENRES.includes(g))];
-
   // Show form
   return (
     <div className="space-y-5">
-      {/* Book title */}
-      <div>
-        <label
-          className="block text-sm text-leather-dark mb-2 tracking-wide"
-          style={{ fontFamily: "var(--font-playfair), serif" }}
-        >
-          Название книги <span className="text-burgundy">*</span>
-        </label>
-        {isPrefill ? (
-          <div className="w-full p-3 text-sm bg-parchment-dark/40 border border-gold/20 rounded text-ink/70 cursor-default select-none">
-            {bookTitle}
+      {/* Book reference block (prefill) or editable fields */}
+      {isPrefill ? (
+        <div className="flex items-start gap-3 p-3 bg-cream/60 border border-gold/20 rounded-lg">
+          <div className="flex-shrink-0 mt-0.5">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" className="text-sepia/50">
+              <path d="M4 19.5v-15A2.5 2.5 0 0 1 6.5 2H20v20H6.5a2.5 2.5 0 0 1 0-5H20" />
+            </svg>
           </div>
-        ) : (
-          <input
-            type="text"
-            value={bookTitle}
-            onChange={(e) => setBookTitle(e.target.value)}
-            placeholder="напр. Мастер и Маргарита"
-            className="w-full p-3 text-sm bg-cream border border-gold/30 rounded focus:outline-none focus:border-sepia/50 text-ink"
-          />
-        )}
-      </div>
-
-      {/* Author */}
-      <div>
-        <label
-          className="block text-sm text-leather-dark mb-2 tracking-wide"
-          style={{ fontFamily: "var(--font-playfair), serif" }}
-        >
-          Автор{" "}
-          {!isPrefill && <span className="text-sepia/40 text-xs">(необязательно)</span>}
-        </label>
-        {isPrefill ? (
-          <div className="w-full p-3 text-sm bg-parchment-dark/40 border border-gold/20 rounded text-ink/70 cursor-default select-none">
-            {author || <span className="text-sepia/40 italic">не указан</span>}
-          </div>
-        ) : (
-          <input
-            type="text"
-            value={author}
-            onChange={(e) => setAuthor(e.target.value)}
-            placeholder="напр. Михаил Булгаков"
-            className="w-full p-3 text-sm bg-cream border border-gold/30 rounded focus:outline-none focus:border-sepia/50 text-ink"
-          />
-        )}
-      </div>
-
-      {/* Genre picker — only in prefill mode */}
-      {isPrefill && (
-        <div>
-          <label
-            className="block text-sm text-leather-dark mb-2 tracking-wide"
-            style={{ fontFamily: "var(--font-playfair), serif" }}
-          >
-            Жанры
-            {selectedGenres.length > 0 && (
-              <span className="ml-2 text-xs text-sepia/50">выбрано: {selectedGenres.length}</span>
+          <div className="min-w-0">
+            <p className="text-sm font-semibold text-leather-dark leading-tight truncate" style={{ fontFamily: "var(--font-playfair), serif" }}>
+              {bookTitle}
+            </p>
+            {author && <p className="text-xs text-sepia/60 mt-0.5 truncate">{author}</p>}
+            {prefillGenres.length > 0 && (
+              <div className="flex flex-wrap gap-1 mt-1.5">
+                {prefillGenres.slice(0, 4).map((g) => (
+                  <span key={g} className="genre-tag text-[10px] py-0.5 px-1.5">{g}</span>
+                ))}
+              </div>
             )}
-          </label>
-          <div className="flex flex-wrap gap-2">
-            {allGenres.map((g) => {
-              const selected = selectedGenres.includes(g);
-              const isCustom = customGenres.includes(g);
-              return (
-                <button
-                  key={g}
-                  onClick={() => toggleGenre(g)}
-                  className={`px-3 py-1.5 text-xs rounded border transition-all ${
-                    selected
-                      ? "bg-sepia text-parchment border-sepia"
-                      : "border-gold/40 text-sepia/70 hover:border-sepia/50"
-                  }`}
-                >
-                  {selected && <span className="mr-1 opacity-70">✓</span>}
-                  {g}
-                  {isCustom && !selected && (
-                    <span
-                      role="button"
-                      onClick={(e) => { e.stopPropagation(); removeCustomGenre(g); }}
-                      className="ml-1.5 opacity-40 hover:opacity-80 transition-opacity"
-                    >
-                      ×
-                    </span>
-                  )}
-                </button>
-              );
-            })}
-            <AddCustomGenreButton onAdd={addCustomGenre} />
           </div>
         </div>
+      ) : (
+        <>
+          {/* Book title */}
+          <div>
+            <label className="block text-sm text-leather-dark mb-2 tracking-wide" style={{ fontFamily: "var(--font-playfair), serif" }}>
+              Название книги <span className="text-burgundy">*</span>
+            </label>
+            <input
+              type="text"
+              value={bookTitle}
+              onChange={(e) => setBookTitle(e.target.value)}
+              placeholder="напр. Мастер и Маргарита"
+              className="w-full p-3 text-sm bg-cream border border-gold/30 rounded focus:outline-none focus:border-sepia/50 text-ink"
+            />
+          </div>
+
+          {/* Author */}
+          <div>
+            <label className="block text-sm text-leather-dark mb-2 tracking-wide" style={{ fontFamily: "var(--font-playfair), serif" }}>
+              Автор <span className="text-sepia/40 text-xs">(необязательно)</span>
+            </label>
+            <input
+              type="text"
+              value={author}
+              onChange={(e) => setAuthor(e.target.value)}
+              placeholder="напр. Михаил Булгаков"
+              className="w-full p-3 text-sm bg-cream border border-gold/30 rounded focus:outline-none focus:border-sepia/50 text-ink"
+            />
+          </div>
+        </>
       )}
 
-      {/* What you liked */}
+      {/* What you liked / want */}
       <div>
         <label
           className="block text-sm text-leather-dark mb-2 tracking-wide"
           style={{ fontFamily: "var(--font-playfair), serif" }}
         >
-          {isPrefill ? "Что вы хотите найти?" : "Что вам понравилось?"}{" "}
+          {isPrefill ? "Что вам в ней понравилось?" : "Что вам понравилось?"}{" "}
           <span className="text-burgundy">*</span>
         </label>
         <textarea
           value={whatYouLiked}
           onChange={(e) => setWhatYouLiked(e.target.value)}
-          placeholder={
-            isPrefill
-              ? "Опишите, какую книгу вы хотите найти. Какие темы, атмосфера или стиль вас привлекают?..."
-              : "Что вас зацепило? Стиль письма, персонажи, темы, атмосфера?..."
-          }
+          placeholder="Стиль, атмосфера, персонажи, темы — что зацепило больше всего?..."
           className="w-full p-3 text-sm bg-cream border border-gold/30 rounded resize-none focus:outline-none focus:border-sepia/50 text-ink leading-relaxed"
-          rows={3}
+          rows={4}
         />
       </div>
 
@@ -296,47 +210,5 @@ export function SearchBySimilar({ onClose, prefill, onBookSaved }: SearchBySimil
         Найти похожую книгу
       </button>
     </div>
-  );
-}
-
-function AddCustomGenreButton({ onAdd }: { onAdd: (val: string) => void }) {
-  const [adding, setAdding] = useState(false);
-  const [value, setValue] = useState("");
-
-  function commit() {
-    onAdd(value.trim());
-    setValue("");
-    setAdding(false);
-  }
-
-  if (adding) {
-    return (
-      <input
-        autoFocus
-        value={value}
-        onChange={(e) => setValue(e.target.value)}
-        onKeyDown={(e) => {
-          if (e.key === "Enter") commit();
-          if (e.key === "Escape") { setAdding(false); setValue(""); }
-        }}
-        onBlur={commit}
-        placeholder="Свой жанр..."
-        className="px-3 py-1.5 text-xs border border-sepia/50 rounded bg-cream text-ink focus:outline-none focus:border-sepia w-32"
-        maxLength={30}
-      />
-    );
-  }
-
-  return (
-    <button
-      onClick={() => setAdding(true)}
-      className="px-3 py-1.5 text-xs rounded border border-dashed border-gold/50 text-gold/70 hover:border-gold hover:text-gold transition-all flex items-center gap-1"
-      title="Добавить свой жанр"
-    >
-      <svg width="10" height="10" viewBox="0 0 10 10" fill="currentColor">
-        <path d="M4 0h2v4h4v2H6v4H4V6H0V4h4V0z" />
-      </svg>
-      Свой жанр
-    </button>
   );
 }

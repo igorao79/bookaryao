@@ -101,7 +101,7 @@ export function SearchFromScratch({ onClose, onBookSaved }: SearchFromScratchPro
     if (success) {
       setToast({ message: "Книга сохранена в коллекцию!", type: "success" });
       onBookSaved?.();
-      setTimeout(() => { reset(); onClose(); }, 1200);
+      setTimeout(() => onClose(), 900);
     } else {
       setToast({ message: "Не удалось сохранить. Попробуйте ещё раз.", type: "error" });
     }
