@@ -15,6 +15,7 @@ const nextConfig: NextConfig = {
       { protocol: "https", hostname: "media.kitsu.io" },
       // MyAnimeList / Jikan covers
       { protocol: "https", hostname: "cdn.myanimelist.net" },
+      { protocol: "https", hostname: "myanimelist.net" },
       // MangaDex covers
       { protocol: "https", hostname: "uploads.mangadex.org" },
     ],
