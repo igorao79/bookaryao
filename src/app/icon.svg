@@ -1,0 +1,15 @@
+<svg width="32" height="32" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- Dark book shell -->
+  <path d="M16 4 C11 3.5, 2 6, 2 7.5 L2 24 L2 25.5 C2 27, 11 26, 16 25 C21 26, 30 27, 30 25.5 L30 24 L30 7.5 C30 6, 21 3.5, 16 4 Z" fill="#2a1508"/>
+  <!-- Left page -->
+  <path d="M16 6 C12 5.5, 4 7.5, 4 8.5 L4 23 C4 24, 12 23.5, 16 23 Z" fill="#8b5e34"/>
+  <!-- Right page -->
+  <path d="M16 6 C20 5.5, 28 7.5, 28 8.5 L28 23 C28 24, 20 23.5, 16 23 Z" fill="#704214"/>
+  <!-- Gold spine -->
+  <rect x="14.8" y="4" width="2.4" height="21" rx="0.5" fill="#c5a55a"/>
+  <!-- Spine diamond -->
+  <path d="M16 12 L17.2 13.8 L16 15.6 L14.8 13.8 Z" fill="#b89a4a"/>
+  <!-- Sparkle -->
+  <path d="M26 4 L27 1.5 L28 4 L30.5 5 L28 6 L27 8.5 L26 6 L23.5 5 Z" fill="#c5a55a"/>
+  <circle cx="27" cy="5" r="0.7" fill="#faf7f0" opacity="0.6"/>
+</svg>
