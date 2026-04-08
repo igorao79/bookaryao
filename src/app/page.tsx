@@ -16,7 +16,7 @@ export default function Home() {
         {/* Animated bookshelf background */}
         <AnimatedBookshelf />
 
-        <div className="relative z-10 max-w-4xl mx-auto px-4 pt-20 pb-16 text-center">
+        <div className="relative z-10 max-w-4xl mx-auto px-4 pt-28 sm:pt-32 pb-16 text-center">
           {/* Top vignette ornament */}
           <div className="divider-ornament text-gold mb-6">
             <svg width="60" height="20" viewBox="0 0 60 20" fill="currentColor" opacity="0.7">
