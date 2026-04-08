@@ -1,6 +1,7 @@
 import type { BookResult } from "@/types";
 import { searchGoogleBooks, getGoogleBookById } from "./googleBooks";
 import { searchOpenLibrary } from "./openLibrary";
+import { searchAniList } from "./anilist";
 
 /**
  * Search for a book by query. Tries Google Books first, falls back to Open Library.
@@ -50,6 +51,12 @@ export async function enrichBookWithCover(
   );
   if (olResults[0]?.coverUrl) {
     return { ...book, coverUrl: olResults[0].coverUrl };
+  }
+
+  // Last resort: AniList (great for manga covers)
+  const anilist = await searchAniList(book.title);
+  if (anilist.coverUrl) {
+    return { ...book, coverUrl: anilist.coverUrl };
   }
 
   return book;
