@@ -22,15 +22,20 @@ type SearchMode = "choose" | "scratch" | "similar";
 
 export function BookSearchModal({ isOpen, onClose, prefill, initialMode, onBookSaved }: BookSearchModalProps) {
   const [mode, setMode] = useState<SearchMode>(initialMode ?? "choose");
+  const [isClosing, setIsClosing] = useState(false);
 
   // Re-sync mode when modal opens with a new initialMode
   useEffect(() => {
-    if (isOpen) setMode(initialMode ?? "choose");
+    if (isOpen) { setMode(initialMode ?? "choose"); setIsClosing(false); }
   }, [isOpen, initialMode]);
 
   const handleClose = useCallback(() => {
-    setMode("choose");
-    onClose();
+    setIsClosing(true);
+    setTimeout(() => {
+      setIsClosing(false);
+      setMode("choose");
+      onClose();
+    }, 280);
   }, [onClose]);
 
   // Escape key
@@ -55,11 +60,11 @@ export function BookSearchModal({ isOpen, onClose, prefill, initialMode, onBookS
     };
   }, [isOpen]);
 
-  if (!isOpen) return null;
+  if (!isOpen && !isClosing) return null;
 
   return (
     <div
-      className="fixed inset-0 z-50 modal-backdrop flex items-center justify-center p-4 animate-fade-in"
+      className={`fixed inset-0 z-50 modal-backdrop flex items-center justify-center p-4 ${isClosing ? "animate-fade-out" : "animate-fade-in"}`}
       onClick={(e) => {
         if (e.target === e.currentTarget) handleClose();
       }}
@@ -67,7 +72,7 @@ export function BookSearchModal({ isOpen, onClose, prefill, initialMode, onBookS
       aria-modal="true"
       aria-label="Найти книгу"
     >
-      <div className="bg-parchment-light border border-gold/30 rounded-xl shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto animate-fade-in-up">
+      <div className={`bg-parchment-light border border-gold/30 rounded-xl shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto ${isClosing ? "animate-fade-out-down" : "animate-fade-in-up"}`}>
         {/* Header */}
         <div className="flex items-center justify-between p-5 border-b border-gold/20">
           <div>
