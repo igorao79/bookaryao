@@ -10,6 +10,7 @@ import {
   buildSearchBySimilarPrompt,
 } from "@/lib/ai/prompts";
 import { findBook, enrichBookWithCover } from "@/lib/books/search";
+import { getUserPreferences } from "@/lib/db/userPreferences";
 
 const MAX_AI_RETRIES = 3;
 
@@ -31,6 +32,9 @@ export async function POST(request: Request) {
   const data = parsed.data;
   let userGenres: string[] = [];
 
+  // Load cross-session user preferences
+  const pastRejections = await getUserPreferences(session.user.id);
+
   // Build prompt based on search type
   let prompts: { system: string; user: string };
   if (data.type === "scratch") {
@@ -38,14 +42,16 @@ export async function POST(request: Request) {
     prompts = buildSearchFromScratchPrompt(
       data.genre,
       data.description,
-      data.rejectedBooks as RejectedBook[]
+      data.rejectedBooks as RejectedBook[],
+      pastRejections
     );
   } else {
     prompts = buildSearchBySimilarPrompt(
       data.bookTitle,
       data.author || undefined,
       data.whatYouLiked,
-      data.rejectedBooks as RejectedBook[]
+      data.rejectedBooks as RejectedBook[],
+      pastRejections
     );
   }
 
