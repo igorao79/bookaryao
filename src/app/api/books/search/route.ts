@@ -85,15 +85,15 @@ export async function POST(request: Request) {
       const titleNorm = (s: string) => s.toLowerCase().trim();
       const alreadySaved = userSavedBooks.some(
         (s) =>
-          titleNorm(s.title) === titleNorm(book.title) &&
-          titleNorm(s.author) === titleNorm(book.author)
+          titleNorm(s.title) === titleNorm(aiSuggestion.title) ||
+          titleNorm(s.title) === titleNorm(book.title)
       );
       if (alreadySaved) {
         prompts = {
           ...prompts,
           user:
             prompts.user +
-            `\n\nIMPORTANT: The book "${book.title}" by ${book.author} is already in the user's library. Recommend a completely different book.`,
+            `\n\nIMPORTANT: The book "${aiSuggestion.title}" by ${aiSuggestion.author} is already in the user's library. Recommend a completely different book.`,
         };
         continue;
       }
@@ -101,8 +101,8 @@ export async function POST(request: Request) {
       // Enrich with cover if missing
       const enrichedBook = await enrichBookWithCover(book);
 
-      // Merge user genres (Russian) + book genres (English), dedup
-      const bookGenresLower = enrichedBook.genres.map((g) => g.toLowerCase());
+      // AI title/author are always used as canonical (English, no "Vol. X")
+      // The found book only contributes cover URL and IDs
       const extraBookGenres = enrichedBook.genres.filter(
         (g) => !userGenres.some(
           (ug) => g.toLowerCase().includes(ug.toLowerCase()) ||
@@ -110,12 +110,14 @@ export async function POST(request: Request) {
         )
       );
       const mergedGenres = [...userGenres, ...extraBookGenres];
-
-      // All user genres are matching (AI was instructed to find them)
       const matchingGenres = userGenres;
 
       const recommendation: BookRecommendation = {
         ...enrichedBook,
+        // Override with AI's English title and author — book APIs may return
+        // localised/volume-specific titles (e.g. "ワンパンマン 1")
+        title: aiSuggestion.title,
+        author: aiSuggestion.author,
         genres: mergedGenres,
         aiSummary: aiSuggestion.whyItMatches,
         matchingGenres,

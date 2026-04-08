@@ -105,16 +105,13 @@ export async function POST(request: Request) {
     }
 
     const enrichedBook = await enrichBookWithCover(book);
-    const matchingGenres = enrichedBook.genres.filter((g) =>
-      userGenres.some(
-        (ug) =>
-          g.toLowerCase().includes(ug.toLowerCase()) ||
-          ug.toLowerCase().includes(g.toLowerCase())
-      )
-    );
+    const matchingGenres = userGenres.length > 0 ? userGenres : enrichedBook.genres.slice(0, 2);
 
     const recommendation: BookRecommendation = {
       ...enrichedBook,
+      // Always use AI's English title/author — APIs may return localised versions
+      title: aiSuggestion.title,
+      author: aiSuggestion.author,
       aiSummary: aiSuggestion.whyItMatches,
       matchingGenres,
     };
