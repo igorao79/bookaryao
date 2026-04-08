@@ -7,6 +7,7 @@ CRITICAL RULES:
 2. Never invent or hallucinate book titles.
 3. Prefer well-known, widely available books.
 4. Always respond with valid JSON.
+5. In the "whyItMatches" field, use CORRECT and CANONICAL character/author names — double-check spellings before writing them. For example: Saitama (not Saitaku), Light Yagami (not Light Yagami), etc.
 
 Your response MUST be a JSON object with exactly these fields:
 {
