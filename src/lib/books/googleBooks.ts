@@ -29,7 +29,6 @@ export async function searchGoogleBooks(
     q: query,
     maxResults: String(maxResults),
     printType: "books",
-    langRestrict: "en",
   });
 
   const res = await fetch(`${BASE_URL}?${params}`);
