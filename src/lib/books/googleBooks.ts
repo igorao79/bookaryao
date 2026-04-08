@@ -10,8 +10,12 @@ interface GoogleBooksVolume {
     description?: string;
     categories?: string[];
     imageLinks?: {
-      thumbnail?: string;
       smallThumbnail?: string;
+      thumbnail?: string;
+      small?: string;
+      medium?: string;
+      large?: string;
+      extraLarge?: string;
     };
   };
 }
@@ -52,8 +56,16 @@ export async function getGoogleBookById(
 
 function normalizeGoogleBook(volume: GoogleBooksVolume): BookResult {
   const info = volume.volumeInfo;
-  let coverUrl = info.imageLinks?.thumbnail ?? null;
-  // upgrade to higher quality by removing edge/zoom params
+  const links = info.imageLinks;
+  // Pick the best available image, preferring higher quality
+  let coverUrl =
+    links?.extraLarge ??
+    links?.large ??
+    links?.medium ??
+    links?.small ??
+    links?.thumbnail ??
+    links?.smallThumbnail ??
+    null;
   if (coverUrl) {
     coverUrl = coverUrl.replace("&edge=curl", "").replace("zoom=1", "zoom=2");
     coverUrl = coverUrl.replace("http://", "https://");

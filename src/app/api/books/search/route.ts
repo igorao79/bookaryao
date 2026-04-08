@@ -1,7 +1,8 @@
 import { NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { db } from "@/lib/db";
-import { searchHistory } from "@/lib/db/schema";
+import { searchHistory, savedBooks } from "@/lib/db/schema";
+import { eq } from "drizzle-orm";
 import { searchRequestSchema } from "@/types";
 import type { BookRecommendation, RejectedBook } from "@/types";
 import { getBookRecommendation } from "@/lib/ai/groq";
@@ -32,8 +33,13 @@ export async function POST(request: Request) {
   const data = parsed.data;
   let userGenres: string[] = [];
 
-  // Load cross-session user preferences
-  const pastRejections = await getUserPreferences(session.user.id);
+  // Load cross-session user preferences and saved books
+  const [pastRejections, userSavedBooks] = await Promise.all([
+    getUserPreferences(session.user.id),
+    db.select({ title: savedBooks.title, author: savedBooks.author })
+      .from(savedBooks)
+      .where(eq(savedBooks.userId, session.user.id)),
+  ]);
 
   // Build prompt based on search type
   let prompts: { system: string; user: string };
@@ -43,7 +49,8 @@ export async function POST(request: Request) {
       data.genre,
       data.description,
       data.rejectedBooks as RejectedBook[],
-      pastRejections
+      pastRejections,
+      userSavedBooks
     );
   } else {
     prompts = buildSearchBySimilarPrompt(
@@ -51,7 +58,8 @@ export async function POST(request: Request) {
       data.author || undefined,
       data.whatYouLiked,
       data.rejectedBooks as RejectedBook[],
-      pastRejections
+      pastRejections,
+      userSavedBooks
     );
   }
 
@@ -72,6 +80,23 @@ export async function POST(request: Request) {
         aiSuggestion.title
       );
       if (!book) continue;
+
+      // Skip if user already has this book saved
+      const titleNorm = (s: string) => s.toLowerCase().trim();
+      const alreadySaved = userSavedBooks.some(
+        (s) =>
+          titleNorm(s.title) === titleNorm(book.title) &&
+          titleNorm(s.author) === titleNorm(book.author)
+      );
+      if (alreadySaved) {
+        prompts = {
+          ...prompts,
+          user:
+            prompts.user +
+            `\n\nIMPORTANT: The book "${book.title}" by ${book.author} is already in the user's library. Recommend a completely different book.`,
+        };
+        continue;
+      }
 
       // Enrich with cover if missing
       const enrichedBook = await enrichBookWithCover(book);

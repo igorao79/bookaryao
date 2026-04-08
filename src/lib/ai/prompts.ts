@@ -35,17 +35,26 @@ function formatPastPreferences(past: RejectedBookWithDate[]): string {
   return `\n\nUSER'S PAST PREFERENCES (rejected in previous sessions — avoid similar books):\n${lines.join("\n")}`;
 }
 
+function formatSavedBooks(saved: { title: string; author: string }[]): string {
+  if (saved.length === 0) return "";
+
+  const lines = saved.map((b) => `- "${b.title}" by ${b.author}`);
+  return `\n\nDO NOT recommend these books (user already has them in their library):\n${lines.join("\n")}`;
+}
+
 export function buildSearchFromScratchPrompt(
   genre: string,
   description: string,
   rejectedBooks: RejectedBook[] = [],
-  pastRejections: RejectedBookWithDate[] = []
+  pastRejections: RejectedBookWithDate[] = [],
+  savedBooks: { title: string; author: string }[] = []
 ): { system: string; user: string } {
   const system =
     SYSTEM_BASE +
     `\n\nThe user is looking for a book from scratch based on their preferred genre and description. Find the BEST single book that matches their preferences.` +
     formatRejectedBooks(rejectedBooks) +
-    formatPastPreferences(pastRejections);
+    formatPastPreferences(pastRejections) +
+    formatSavedBooks(savedBooks);
 
   const user = `Genre: ${genre}\n\nWhat I'm looking for: ${description}`;
 
@@ -57,13 +66,15 @@ export function buildSearchBySimilarPrompt(
   author: string | undefined,
   whatTheyLiked: string,
   rejectedBooks: RejectedBook[] = [],
-  pastRejections: RejectedBookWithDate[] = []
+  pastRejections: RejectedBookWithDate[] = [],
+  savedBooks: { title: string; author: string }[] = []
 ): { system: string; user: string } {
   const system =
     SYSTEM_BASE +
     `\n\nThe user wants a book similar to one they've already read. Find a DIFFERENT book that shares qualities they enjoyed. DO NOT recommend the same book they mentioned.` +
     formatRejectedBooks(rejectedBooks) +
-    formatPastPreferences(pastRejections);
+    formatPastPreferences(pastRejections) +
+    formatSavedBooks(savedBooks);
 
   const authorLine = author ? ` by ${author}` : "";
   const user = `Book I liked: "${bookTitle}"${authorLine}\n\nWhat I enjoyed about it: ${whatTheyLiked}`;

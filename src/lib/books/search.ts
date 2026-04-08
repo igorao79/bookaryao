@@ -1,5 +1,5 @@
 import type { BookResult } from "@/types";
-import { searchGoogleBooks } from "./googleBooks";
+import { searchGoogleBooks, getGoogleBookById } from "./googleBooks";
 import { searchOpenLibrary } from "./openLibrary";
 
 /**
@@ -28,12 +28,20 @@ export async function findBook(
 }
 
 /**
- * Merge cover data: if Google result has no cover, try Open Library
+ * Merge cover data: if Google result has no cover, try fetching by ID,
+ * then fall back to Open Library.
  */
 export async function enrichBookWithCover(
   book: BookResult
 ): Promise<BookResult> {
   if (book.coverUrl) return book;
+
+  // List results often omit imageLinks even when the book has a cover.
+  // Fetch the individual volume for a more complete response.
+  if (book.googleBooksId) {
+    const full = await getGoogleBookById(book.googleBooksId);
+    if (full?.coverUrl) return { ...book, coverUrl: full.coverUrl };
+  }
 
   // Try Open Library for cover
   const olResults = await searchOpenLibrary(
