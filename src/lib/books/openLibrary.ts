@@ -23,7 +23,6 @@ export async function searchOpenLibrary(
   const params = new URLSearchParams({
     q: query,
     limit: String(limit),
-    language: "eng",
   });
 
   const res = await fetch(`${SEARCH_URL}?${params}`);

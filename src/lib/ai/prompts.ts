@@ -14,7 +14,7 @@ Your response MUST be a JSON object with exactly these fields:
   "author": "full author name",
   "genres": ["genre1", "genre2"],
   "whyItMatches": "2-3 sentence explanation IN RUSSIAN of why this book matches the user's request",
-  "searchQuery": "optimized search query for finding this book on Google Books API"
+  "searchQuery": "optimized search query for finding this book on Google Books API — use romanized/Latin characters only, include title and author name"
 }`;
 
 function formatRejectedBooks(rejected: RejectedBook[]): string {
