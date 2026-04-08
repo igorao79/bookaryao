@@ -11,6 +11,7 @@ import {
   buildSearchBySimilarPrompt,
 } from "@/lib/ai/prompts";
 import { findBook, enrichBookWithCover } from "@/lib/books/search";
+import { appendRejection } from "@/lib/db/userPreferences";
 
 export async function POST(request: Request) {
   const session = await auth();
@@ -57,6 +58,13 @@ export async function POST(request: Request) {
     .update(searchHistory)
     .set({ rejectedBooks: JSON.stringify(updatedRejected) })
     .where(eq(searchHistory.id, searchHistoryId));
+
+  // Persist rejection to cross-session user preferences
+  await appendRejection(session.user.id, {
+    title: rejectedBook.title,
+    author: rejectedBook.author,
+    reason,
+  });
 
   // Build new prompt with updated rejected books
   let prompts: { system: string; user: string };
