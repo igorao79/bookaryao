@@ -36,6 +36,7 @@ export function SearchFromScratch({ onClose, onBookSaved }: SearchFromScratchPro
   const [customGenres, setCustomGenres] = useState<string[]>([]);
   const [description, setDescription] = useState("");
   const [showReject, setShowReject] = useState(false);
+  const [isExiting, setIsExiting] = useState(false);
   const [addingCustom, setAddingCustom] = useState(false);
   const [toast, setToast] = useState<{ message: string; type: ToastType } | null>(null);
   const [customInput, setCustomInput] = useState("");
@@ -109,12 +110,15 @@ export function SearchFromScratch({ onClose, onBookSaved }: SearchFromScratchPro
 
   async function handleRejectSubmit(reason: string) {
     setShowReject(false);
+    setIsExiting(true);
+    await new Promise((r) => setTimeout(r, 320));
+    setIsExiting(false);
     await reject(reason);
   }
 
   if (recommendation) {
     return (
-      <div>
+      <div className={isExiting ? "animate-fade-out-down pointer-events-none" : "animate-fade-in-up"}>
         {toast && <Toast message={toast.message} type={toast.type} onDone={() => setToast(null)} />}
         <BookCard
           variant="recommendation"

@@ -20,6 +20,7 @@ export function SearchBySimilar({ onClose, prefill, onBookSaved }: SearchBySimil
   const [author, setAuthor] = useState(prefill?.author ?? "");
   const [whatYouLiked, setWhatYouLiked] = useState("");
   const [showReject, setShowReject] = useState(false);
+  const [isExiting, setIsExiting] = useState(false);
   const [toast, setToast] = useState<{ message: string; type: ToastType } | null>(null);
 
   // Genres passed from prefill (sent straight to the search query, no picker shown)
@@ -66,13 +67,16 @@ export function SearchBySimilar({ onClose, prefill, onBookSaved }: SearchBySimil
 
   async function handleRejectSubmit(reason: string) {
     setShowReject(false);
+    setIsExiting(true);
+    await new Promise((r) => setTimeout(r, 320));
+    setIsExiting(false);
     await reject(reason);
   }
 
   // Show result
   if (recommendation) {
     return (
-      <div>
+      <div className={isExiting ? "animate-fade-out-down pointer-events-none" : "animate-fade-in-up"}>
         {toast && <Toast message={toast.message} type={toast.type} onDone={() => setToast(null)} />}
         <BookCard
           variant="recommendation"

@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { createPortal } from "react-dom";
 
 export type ToastType = "success" | "error";
 
@@ -12,28 +13,29 @@ interface ToastProps {
 
 export function Toast({ message, type, onDone }: ToastProps) {
   const [visible, setVisible] = useState(false);
+  const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
-    // Trigger enter animation
+    setMounted(true);
     const t1 = setTimeout(() => setVisible(true), 10);
-    // Start exit
     const t2 = setTimeout(() => setVisible(false), 3000);
-    // Remove after animation
     const t3 = setTimeout(() => onDone(), 3400);
     return () => { clearTimeout(t1); clearTimeout(t2); clearTimeout(t3); };
   }, [onDone]);
 
+  if (!mounted) return null;
+
   const isSuccess = type === "success";
 
-  return (
+  return createPortal(
     <div
       style={{
         position: "fixed",
         top: 80,
-        right: visible ? 20 : -320,
+        right: visible ? 20 : -340,
         opacity: visible ? 1 : 0,
         transition: "right 0.4s cubic-bezier(0.34,1.56,0.64,1), opacity 0.35s ease",
-        zIndex: 9999,
+        zIndex: 99999,
         pointerEvents: "none",
       }}
     >
@@ -66,6 +68,7 @@ export function Toast({ message, type, onDone }: ToastProps) {
         )}
         {message}
       </div>
-    </div>
+    </div>,
+    document.body
   );
 }
