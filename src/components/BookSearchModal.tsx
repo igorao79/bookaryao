@@ -15,11 +15,12 @@ interface BookSearchModalProps {
   onClose: () => void;
   prefill?: SearchPrefill;
   initialMode?: "similar" | "scratch";
+  onBookSaved?: () => void;
 }
 
 type SearchMode = "choose" | "scratch" | "similar";
 
-export function BookSearchModal({ isOpen, onClose, prefill, initialMode }: BookSearchModalProps) {
+export function BookSearchModal({ isOpen, onClose, prefill, initialMode, onBookSaved }: BookSearchModalProps) {
   const [mode, setMode] = useState<SearchMode>(initialMode ?? "choose");
 
   // Re-sync mode when modal opens with a new initialMode
@@ -171,8 +172,8 @@ export function BookSearchModal({ isOpen, onClose, prefill, initialMode }: BookS
             </div>
           )}
 
-          {mode === "scratch" && <SearchFromScratch onClose={handleClose} />}
-          {mode === "similar" && <SearchBySimilar onClose={handleClose} prefill={prefill} />}
+          {mode === "scratch" && <SearchFromScratch onClose={handleClose} onBookSaved={onBookSaved} />}
+          {mode === "similar" && <SearchBySimilar onClose={handleClose} prefill={prefill} onBookSaved={onBookSaved} />}
         </div>
       </div>
     </div>

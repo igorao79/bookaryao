@@ -30,9 +30,10 @@ const GENRES = [
 interface SearchBySimilarProps {
   onClose: () => void;
   prefill?: SearchPrefill;
+  onBookSaved?: () => void;
 }
 
-export function SearchBySimilar({ onClose, prefill }: SearchBySimilarProps) {
+export function SearchBySimilar({ onClose, prefill, onBookSaved }: SearchBySimilarProps) {
   const [bookTitle, setBookTitle] = useState(prefill?.bookTitle ?? "");
   const [author, setAuthor] = useState(prefill?.author ?? "");
   const [whatYouLiked, setWhatYouLiked] = useState("");
@@ -98,6 +99,7 @@ export function SearchBySimilar({ onClose, prefill }: SearchBySimilarProps) {
     const success = await save();
     if (success) {
       setToast({ message: "Книга сохранена в коллекцию!", type: "success" });
+      onBookSaved?.();
       setTimeout(() => { reset(); onClose(); }, 1200);
     } else {
       setToast({ message: "Не удалось сохранить. Попробуйте ещё раз.", type: "error" });

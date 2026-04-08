@@ -29,11 +29,10 @@ export function Toast({ message, type, onDone }: ToastProps) {
     <div
       style={{
         position: "fixed",
-        bottom: 28,
-        left: "50%",
-        transform: `translateX(-50%) translateY(${visible ? 0 : 16}px)`,
+        top: 80,
+        right: visible ? 20 : -320,
         opacity: visible ? 1 : 0,
-        transition: "transform 0.35s cubic-bezier(0.34,1.56,0.64,1), opacity 0.35s ease",
+        transition: "right 0.4s cubic-bezier(0.34,1.56,0.64,1), opacity 0.35s ease",
         zIndex: 9999,
         pointerEvents: "none",
       }}

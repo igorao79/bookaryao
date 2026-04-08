@@ -10,6 +10,7 @@ import { BookSearchModal } from "@/components/BookSearchModal";
 export default function ProfilePage() {
   const { data: session, status } = useSession();
   const [modalOpen, setModalOpen] = useState(false);
+  const [refreshKey, setRefreshKey] = useState(0);
 
   if (status === "loading") {
     return (
@@ -88,11 +89,12 @@ export default function ProfilePage() {
         </span>
       </div>
 
-      <SavedBooksGrid />
+      <SavedBooksGrid refreshKey={refreshKey} />
 
       <BookSearchModal
         isOpen={modalOpen}
         onClose={() => setModalOpen(false)}
+        onBookSaved={() => setRefreshKey((k) => k + 1)}
       />
     </div>
   );

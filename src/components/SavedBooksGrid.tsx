@@ -8,7 +8,7 @@ import { ReviewModal } from "./ReviewModal";
 import type { SavedBook } from "@/types";
 import type { SearchPrefill } from "./BookSearchModal";
 
-export function SavedBooksGrid() {
+export function SavedBooksGrid({ refreshKey }: { refreshKey?: number }) {
   const { data: session } = useSession();
   const [books, setBooks] = useState<SavedBook[]>([]);
   const [loading, setLoading] = useState(true);
@@ -31,7 +31,7 @@ export function SavedBooksGrid() {
 
   useEffect(() => {
     fetchBooks();
-  }, [fetchBooks]);
+  }, [fetchBooks, refreshKey]);
 
   async function handleDelete(id: string) {
     if (!confirm("Удалить эту книгу из коллекции?")) return;
@@ -113,6 +113,7 @@ export function SavedBooksGrid() {
         onClose={() => setModalPrefill(null)}
         prefill={modalPrefill ?? undefined}
         initialMode="similar"
+        onBookSaved={fetchBooks}
       />
 
       {reviewBook && (

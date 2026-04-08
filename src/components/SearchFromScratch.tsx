@@ -28,9 +28,10 @@ const GENRES = [
 
 interface SearchFromScratchProps {
   onClose: () => void;
+  onBookSaved?: () => void;
 }
 
-export function SearchFromScratch({ onClose }: SearchFromScratchProps) {
+export function SearchFromScratch({ onClose, onBookSaved }: SearchFromScratchProps) {
   const [selectedGenres, setSelectedGenres] = useState<string[]>([]);
   const [customGenres, setCustomGenres] = useState<string[]>([]);
   const [description, setDescription] = useState("");
@@ -99,6 +100,7 @@ export function SearchFromScratch({ onClose }: SearchFromScratchProps) {
     const success = await save();
     if (success) {
       setToast({ message: "Книга сохранена в коллекцию!", type: "success" });
+      onBookSaved?.();
       setTimeout(() => { reset(); onClose(); }, 1200);
     } else {
       setToast({ message: "Не удалось сохранить. Попробуйте ещё раз.", type: "error" });
