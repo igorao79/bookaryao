@@ -87,6 +87,7 @@ export function ReviewModal({
   const [submitted, setSubmitted] = useState(false);
   const [isEdited, setIsEdited] = useState(false);
   const [deleting, setDeleting] = useState(false);
+  const [confirmDelete, setConfirmDelete] = useState(false);
 
   const formRef = useRef<HTMLDivElement>(null);
 
@@ -154,7 +155,11 @@ export function ReviewModal({
   }
 
   async function handleDelete() {
-    if (!confirm("Удалить отзыв?")) return;
+    setConfirmDelete(true);
+  }
+
+  async function executeDelete() {
+    setConfirmDelete(false);
     setDeleting(true);
     try {
       const res = await fetch(`/api/reviews?bookKey=${encodeURIComponent(bookKey)}`, {
@@ -188,6 +193,7 @@ export function ReviewModal({
   const otherReviews = reviewList.filter((r) => r.userId !== currentUserId);
 
   return (
+    <>
     <div
       className="fixed inset-0 z-50 modal-backdrop flex items-end sm:items-center justify-center p-0 sm:p-4 animate-fade-in"
       onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}
@@ -321,6 +327,41 @@ export function ReviewModal({
         </div>
       </div>
     </div>
+
+    {/* Delete review confirmation modal */}
+    {confirmDelete && (
+      <div
+        className="fixed inset-0 z-[60] modal-backdrop flex items-center justify-center p-4 animate-fade-in"
+        onClick={(e) => { if (e.target === e.currentTarget) setConfirmDelete(false); }}
+      >
+        <div className="bg-parchment-light border border-gold/30 rounded-xl shadow-2xl w-full max-w-xs p-6 animate-fade-in-up">
+          <h3
+            className="text-base text-leather-dark mb-2"
+            style={{ fontFamily: "var(--font-playfair), serif" }}
+          >
+            Удалить отзыв?
+          </h3>
+          <p className="text-sm text-sepia/60 mb-5">Отзыв будет удалён без возможности восстановления.</p>
+          <div className="flex gap-3">
+            <button
+              onClick={executeDelete}
+              className="flex-1 py-2 bg-burgundy text-parchment-light rounded text-sm tracking-wide hover:bg-burgundy-light transition-colors"
+              style={{ fontFamily: "var(--font-playfair), serif" }}
+            >
+              Удалить
+            </button>
+            <button
+              onClick={() => setConfirmDelete(false)}
+              className="flex-1 py-2 border border-gold/40 text-sepia rounded text-sm tracking-wide hover:bg-parchment-dark transition-colors"
+              style={{ fontFamily: "var(--font-playfair), serif" }}
+            >
+              Отмена
+            </button>
+          </div>
+        </div>
+      </div>
+    )}
+    </>
   );
 }
 
