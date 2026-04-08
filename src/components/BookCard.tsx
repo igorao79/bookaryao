@@ -1,6 +1,7 @@
 "use client";
 
 import Image from "next/image";
+import { useState } from "react";
 import type { BookRecommendation, SavedBook } from "@/types";
 
 // ── Highlight helper ────────────────────────────────────────────────
@@ -100,6 +101,7 @@ export function BookCard(props: BookCardProps) {
 
 function RecommendationCard({ book, onSave, onReject, isSaving, userQuery = "" }: RecommendationProps) {
   const keywords = extractKeywords(userQuery);
+  const [coverLoaded, setCoverLoaded] = useState(false);
 
   return (
     <div className="animate-fade-in-up bg-cream border border-gold/30 rounded-lg overflow-hidden book-shadow">
@@ -107,14 +109,20 @@ function RecommendationCard({ book, onSave, onReject, isSaving, userQuery = "" }
         {/* Cover — fixed width, no extra padding */}
         <div className="flex-shrink-0 w-32 sm:w-40">
           {book.coverUrl ? (
-            <Image
-              src={book.coverUrl}
-              alt={book.title}
-              width={160}
-              height={240}
-              className="w-full h-full object-cover"
-              style={{ maxHeight: 240 }}
-            />
+            <div className="relative w-full" style={{ minHeight: 180 }}>
+              {!coverLoaded && (
+                <div className="absolute inset-0 skeleton" style={{ minHeight: 180 }} />
+              )}
+              <Image
+                src={book.coverUrl}
+                alt={book.title}
+                width={160}
+                height={240}
+                className="w-full h-full object-cover"
+                style={{ maxHeight: 240, display: coverLoaded ? "block" : "block", opacity: coverLoaded ? 1 : 0, transition: "opacity 0.3s ease" }}
+                onLoad={() => setCoverLoaded(true)}
+              />
+            </div>
           ) : (
             <div
               className="w-full h-full min-h-[180px] flex items-center justify-center p-3"
@@ -207,16 +215,23 @@ function RecommendationCard({ book, onSave, onReject, isSaving, userQuery = "" }
 }
 
 function CollectionCard({ book, onDelete, onFindSimilar, onReviewClick, isDeleting }: CollectionProps) {
+  const [coverLoaded, setCoverLoaded] = useState(false);
+
   return (
     <div className={`group bg-cream border border-gold/20 rounded-lg overflow-hidden book-shadow hover:book-shadow-hover transition-all duration-300 ${isDeleting ? "animate-delete-out" : ""}`}>
       <div className="relative aspect-[2/3] overflow-hidden">
         {book.coverUrl ? (
-          <Image
-            src={book.coverUrl}
-            alt={book.title}
-            fill
-            className="object-cover group-hover:scale-105 transition-transform duration-500"
-          />
+          <>
+            {!coverLoaded && <div className="absolute inset-0 skeleton z-10" />}
+            <Image
+              src={book.coverUrl}
+              alt={book.title}
+              fill
+              className="object-cover group-hover:scale-105 transition-transform duration-500"
+              style={{ opacity: coverLoaded ? 1 : 0, transition: "opacity 0.3s ease" }}
+              onLoad={() => setCoverLoaded(true)}
+            />
+          </>
         ) : (
           <div
             className="w-full h-full flex items-center justify-center"

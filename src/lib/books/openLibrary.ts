@@ -1,4 +1,5 @@
 import type { BookResult } from "@/types";
+import { cleanBookTitle } from "./titleUtils";
 
 const SEARCH_URL = "https://openlibrary.org/search.json";
 
@@ -41,7 +42,7 @@ export function getOpenLibraryCoverUrl(
 
 function normalizeOpenLibraryDoc(doc: OpenLibraryDoc): BookResult {
   return {
-    title: doc.title,
+    title: cleanBookTitle(doc.title),
     author: doc.author_name?.join(", ") ?? "Unknown Author",
     description: doc.first_sentence?.[0]?.value ?? "",
     genres: (doc.subject ?? []).slice(0, 5),

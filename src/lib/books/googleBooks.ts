@@ -1,4 +1,5 @@
 import type { BookResult } from "@/types";
+import { cleanBookTitle } from "./titleUtils";
 
 const BASE_URL = "https://www.googleapis.com/books/v1/volumes";
 
@@ -72,7 +73,7 @@ function normalizeGoogleBook(volume: GoogleBooksVolume): BookResult {
   }
 
   return {
-    title: info.title,
+    title: cleanBookTitle(info.title),
     author: info.authors?.join(", ") ?? "Unknown Author",
     description: info.description ?? "",
     genres: info.categories ?? [],
