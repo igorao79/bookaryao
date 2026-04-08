@@ -1,4 +1,4 @@
-import type { RejectedBook } from "@/types";
+import type { RejectedBook, RejectedBookWithDate } from "@/types";
 
 const SYSTEM_BASE = `You are an expert book recommendation assistant. You have deep knowledge of world literature across all genres, time periods, and cultures. Your goal is to recommend real, published books that genuinely exist.
 
@@ -26,15 +26,26 @@ function formatRejectedBooks(rejected: RejectedBook[]): string {
   return `\n\nDO NOT recommend these books (they were already rejected):\n${lines.join("\n")}`;
 }
 
+function formatPastPreferences(past: RejectedBookWithDate[]): string {
+  if (past.length === 0) return "";
+
+  const lines = past.map(
+    (b) => `- "${b.title}" by ${b.author} (Reason: ${b.reason})`
+  );
+  return `\n\nUSER'S PAST PREFERENCES (rejected in previous sessions — avoid similar books):\n${lines.join("\n")}`;
+}
+
 export function buildSearchFromScratchPrompt(
   genre: string,
   description: string,
-  rejectedBooks: RejectedBook[] = []
+  rejectedBooks: RejectedBook[] = [],
+  pastRejections: RejectedBookWithDate[] = []
 ): { system: string; user: string } {
   const system =
     SYSTEM_BASE +
     `\n\nThe user is looking for a book from scratch based on their preferred genre and description. Find the BEST single book that matches their preferences.` +
-    formatRejectedBooks(rejectedBooks);
+    formatRejectedBooks(rejectedBooks) +
+    formatPastPreferences(pastRejections);
 
   const user = `Genre: ${genre}\n\nWhat I'm looking for: ${description}`;
 
@@ -45,12 +56,14 @@ export function buildSearchBySimilarPrompt(
   bookTitle: string,
   author: string | undefined,
   whatTheyLiked: string,
-  rejectedBooks: RejectedBook[] = []
+  rejectedBooks: RejectedBook[] = [],
+  pastRejections: RejectedBookWithDate[] = []
 ): { system: string; user: string } {
   const system =
     SYSTEM_BASE +
     `\n\nThe user wants a book similar to one they've already read. Find a DIFFERENT book that shares qualities they enjoyed. DO NOT recommend the same book they mentioned.` +
-    formatRejectedBooks(rejectedBooks);
+    formatRejectedBooks(rejectedBooks) +
+    formatPastPreferences(pastRejections);
 
   const authorLine = author ? ` by ${author}` : "";
   const user = `Book I liked: "${bookTitle}"${authorLine}\n\nWhat I enjoyed about it: ${whatTheyLiked}`;

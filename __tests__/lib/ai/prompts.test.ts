@@ -114,3 +114,52 @@ describe("buildSearchBySimilarPrompt", () => {
     expect(system).toContain("Never invent");
   });
 });
+
+describe("past preferences in prompts", () => {
+  it("buildSearchFromScratchPrompt includes past rejection history when provided", () => {
+    const { system } = buildSearchFromScratchPrompt(
+      "Fantasy",
+      "I want an epic adventure",
+      [],
+      [
+        { title: "The Hobbit", author: "Tolkien", reason: "Too childish", rejectedAt: "2026-04-01T00:00:00.000Z" },
+      ]
+    );
+    expect(system).toContain("The Hobbit");
+    expect(system).toContain("Too childish");
+    expect(system).toContain("previous sessions");
+  });
+
+  it("buildSearchFromScratchPrompt omits past preferences section when list is empty", () => {
+    const { system } = buildSearchFromScratchPrompt("Fantasy", "Adventure", [], []);
+    expect(system).not.toContain("previous sessions");
+  });
+
+  it("buildSearchBySimilarPrompt includes past rejection history when provided", () => {
+    const { system } = buildSearchBySimilarPrompt(
+      "1984",
+      "Orwell",
+      "Dystopian atmosphere",
+      [],
+      [
+        { title: "Brave New World", author: "Huxley", reason: "Too scientific", rejectedAt: "2026-04-01T00:00:00.000Z" },
+      ]
+    );
+    expect(system).toContain("Brave New World");
+    expect(system).toContain("Too scientific");
+    expect(system).toContain("previous sessions");
+  });
+
+  it("past preferences section is separate from current session DO NOT recommend", () => {
+    const { system } = buildSearchFromScratchPrompt(
+      "Fantasy",
+      "Adventure",
+      [{ title: "Dune", author: "Herbert", reason: "Too long" }],
+      [{ title: "Foundation", author: "Asimov", reason: "Too dry", rejectedAt: "2026-04-01T00:00:00.000Z" }]
+    );
+    expect(system).toContain("DO NOT recommend");
+    expect(system).toContain("Dune");
+    expect(system).toContain("previous sessions");
+    expect(system).toContain("Foundation");
+  });
+});
