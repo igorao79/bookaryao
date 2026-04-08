@@ -7,6 +7,16 @@ import type {
   SearchRequest,
 } from "@/types";
 
+async function safeJson(res: Response): Promise<Record<string, unknown>> {
+  try {
+    const text = await res.text();
+    if (!text) return {};
+    return JSON.parse(text) as Record<string, unknown>;
+  } catch {
+    return {};
+  }
+}
+
 interface UseBookSearchReturn {
   recommendation: BookRecommendation | null;
   searchHistoryId: string | null;
@@ -47,13 +57,14 @@ export function useBookSearch(): UseBookSearchReturn {
       });
 
       if (!res.ok) {
-        const data = await res.json();
-        throw new Error(data.error || "Search failed");
+        const data = await safeJson(res);
+        throw new Error((data.error as string) || "Не удалось найти книгу. Попробуйте ещё раз.");
       }
 
-      const data = await res.json();
-      setRecommendation(data.recommendation);
-      setSearchHistoryId(data.searchHistoryId);
+      const data = await safeJson(res);
+      if (!data.recommendation) throw new Error("Не удалось найти книгу. Попробуйте ещё раз.");
+      setRecommendation(data.recommendation as BookRecommendation);
+      setSearchHistoryId(data.searchHistoryId as string);
     } catch (err) {
       setError(
         err instanceof Error ? err.message : "Something went wrong"
@@ -92,14 +103,15 @@ export function useBookSearch(): UseBookSearchReturn {
         });
 
         if (!res.ok) {
-          const data = await res.json();
-          throw new Error(data.error || "Failed to find alternative");
+          const data = await safeJson(res);
+          throw new Error((data.error as string) || "Не удалось найти альтернативу. Попробуйте ещё раз.");
         }
 
-        const data = await res.json();
+        const data = await safeJson(res);
+        if (!data.recommendation) throw new Error("Не удалось найти альтернативу. Попробуйте ещё раз.");
         setRejectedBooks((prev) => [...prev, newRejected]);
-        setRecommendation(data.recommendation);
-        setSearchHistoryId(data.searchHistoryId);
+        setRecommendation(data.recommendation as BookRecommendation);
+        setSearchHistoryId(data.searchHistoryId as string);
       } catch (err) {
         setError(
           err instanceof Error ? err.message : "Something went wrong"
