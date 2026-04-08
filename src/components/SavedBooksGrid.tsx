@@ -9,7 +9,7 @@ import type { SavedBook } from "@/types";
 import type { SearchPrefill } from "./BookSearchModal";
 
 export function SavedBooksGrid({ refreshKey }: { refreshKey?: number }) {
-  const { data: session } = useSession();
+  const { data: session, status } = useSession();
   const [books, setBooks] = useState<SavedBook[]>([]);
   const [loading, setLoading] = useState(true);
   const [modalPrefill, setModalPrefill] = useState<SearchPrefill | null>(null);
@@ -30,8 +30,13 @@ export function SavedBooksGrid({ refreshKey }: { refreshKey?: number }) {
   }, []);
 
   useEffect(() => {
+    if (status === "loading") return;
+    if (status === "unauthenticated") {
+      setLoading(false);
+      return;
+    }
     fetchBooks();
-  }, [fetchBooks, refreshKey]);
+  }, [fetchBooks, refreshKey, status]);
 
   async function handleDelete(id: string) {
     if (!confirm("Удалить эту книгу из коллекции?")) return;

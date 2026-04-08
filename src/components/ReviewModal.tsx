@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import Image from "next/image";
 import type { Review } from "@/types";
 
@@ -48,6 +48,28 @@ function Stars({
   );
 }
 
+function Avatar({ image, name }: { image?: string | null; name?: string | null }) {
+  if (image) {
+    return (
+      <div className="w-8 h-8 rounded-full overflow-hidden shrink-0 mt-0.5">
+        <Image
+          src={image}
+          alt={name ?? ""}
+          width={32}
+          height={32}
+          className="object-cover w-full h-full"
+          unoptimized
+        />
+      </div>
+    );
+  }
+  return (
+    <div className="w-8 h-8 rounded-full bg-sepia/20 flex items-center justify-center shrink-0 mt-0.5 text-sepia/60 text-xs font-semibold">
+      {(name ?? "?")[0]?.toUpperCase()}
+    </div>
+  );
+}
+
 export function ReviewModal({
   isOpen,
   onClose,
@@ -63,6 +85,10 @@ export function ReviewModal({
   const [myText, setMyText] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [submitted, setSubmitted] = useState(false);
+  const [isEdited, setIsEdited] = useState(false);
+  const [deleting, setDeleting] = useState(false);
+
+  const formRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     if (!isOpen || !bookKey) return;
@@ -72,7 +98,6 @@ export function ReviewModal({
       .then((data) => {
         setReviewList(data.reviews ?? []);
         setAvgRating(data.avgRating ?? 0);
-        // Pre-fill if user already has a review
         if (currentUserId) {
           const mine = (data.reviews ?? []).find((r: Review) => r.userId === currentUserId);
           if (mine) {
@@ -91,6 +116,7 @@ export function ReviewModal({
       setMyRating(0);
       setMyText("");
       setSubmitted(false);
+      setIsEdited(false);
     }
   }, [isOpen]);
 
@@ -103,6 +129,7 @@ export function ReviewModal({
 
   async function handleSubmit() {
     if (!myRating) return;
+    const wasSubmitted = submitted;
     setSubmitting(true);
     try {
       const res = await fetch("/api/reviews", {
@@ -119,10 +146,40 @@ export function ReviewModal({
         const all = [newReview, ...reviewList.filter((r) => r.userId !== currentUserId)];
         setAvgRating(Math.round((all.reduce((s, r) => s + r.rating, 0) / all.length) * 10) / 10);
         setSubmitted(true);
+        if (wasSubmitted) setIsEdited(true);
       }
     } finally {
       setSubmitting(false);
     }
+  }
+
+  async function handleDelete() {
+    if (!confirm("Удалить отзыв?")) return;
+    setDeleting(true);
+    try {
+      const res = await fetch(`/api/reviews?bookKey=${encodeURIComponent(bookKey)}`, {
+        method: "DELETE",
+      });
+      if (res.ok) {
+        setReviewList((prev) => prev.filter((r) => r.userId !== currentUserId));
+        const remaining = reviewList.filter((r) => r.userId !== currentUserId);
+        setAvgRating(
+          remaining.length > 0
+            ? Math.round((remaining.reduce((s, r) => s + r.rating, 0) / remaining.length) * 10) / 10
+            : 0
+        );
+        setMyRating(0);
+        setMyText("");
+        setSubmitted(false);
+        setIsEdited(false);
+      }
+    } finally {
+      setDeleting(false);
+    }
+  }
+
+  function handleEdit() {
+    formRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
   }
 
   if (!isOpen) return null;
@@ -168,9 +225,9 @@ export function ReviewModal({
 
         {/* Scrollable body */}
         <div className="overflow-y-auto flex-1">
-          {/* Write review form */}
+          {/* Write / edit review form */}
           {currentUserId && (
-            <div className="p-5 border-b border-gold/15">
+            <div ref={formRef} className="p-5 border-b border-gold/15">
               <p
                 className="text-sm text-leather-dark mb-3"
                 style={{ fontFamily: "var(--font-playfair), serif" }}
@@ -187,14 +244,25 @@ export function ReviewModal({
                 maxLength={1000}
                 disabled={submitting}
               />
-              <button
-                onClick={handleSubmit}
-                disabled={!myRating || submitting}
-                className="mt-2 px-5 py-2 bg-leather text-parchment-light rounded text-xs tracking-wide hover:bg-leather-dark transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
-                style={{ fontFamily: "var(--font-playfair), serif" }}
-              >
-                {submitting ? "Сохраняю..." : submitted ? "Обновить отзыв" : "Опубликовать"}
-              </button>
+              <div className="flex items-center gap-2 mt-2">
+                <button
+                  onClick={handleSubmit}
+                  disabled={!myRating || submitting}
+                  className="px-5 py-2 bg-leather text-parchment-light rounded text-xs tracking-wide hover:bg-leather-dark transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+                  style={{ fontFamily: "var(--font-playfair), serif" }}
+                >
+                  {submitting ? "Сохраняю..." : submitted ? "Обновить отзыв" : "Опубликовать"}
+                </button>
+                {submitted && (
+                  <button
+                    onClick={handleDelete}
+                    disabled={deleting}
+                    className="px-4 py-2 text-xs text-burgundy/70 hover:text-burgundy border border-burgundy/20 hover:border-burgundy/40 rounded transition-colors disabled:opacity-40"
+                  >
+                    {deleting ? "Удаляю..." : "Удалить"}
+                  </button>
+                )}
+              </div>
             </div>
           )}
 
@@ -235,7 +303,14 @@ export function ReviewModal({
             ) : (
               <>
                 {myExistingReview && (
-                  <ReviewItem review={myExistingReview} isOwn />
+                  <ReviewItem
+                    review={myExistingReview}
+                    isOwn
+                    isEdited={isEdited}
+                    onEdit={handleEdit}
+                    onDelete={handleDelete}
+                    deleting={deleting}
+                  />
                 )}
                 {otherReviews.map((r) => (
                   <ReviewItem key={r.id} review={r} />
@@ -249,29 +324,50 @@ export function ReviewModal({
   );
 }
 
-function ReviewItem({ review, isOwn }: { review: Review; isOwn?: boolean }) {
+function ReviewItem({
+  review,
+  isOwn,
+  isEdited,
+  onEdit,
+  onDelete,
+  deleting,
+}: {
+  review: Review;
+  isOwn?: boolean;
+  isEdited?: boolean;
+  onEdit?: () => void;
+  onDelete?: () => void;
+  deleting?: boolean;
+}) {
   return (
     <div className={`flex gap-3 ${isOwn ? "bg-gold/5 -mx-2 px-2 py-2 rounded-lg" : ""}`}>
-      {review.userImage ? (
-        <Image
-          src={review.userImage}
-          alt={review.userName ?? ""}
-          width={32}
-          height={32}
-          className="rounded-full object-cover shrink-0 mt-0.5"
-        />
-      ) : (
-        <div className="w-8 h-8 rounded-full bg-sepia/20 flex items-center justify-center shrink-0 mt-0.5 text-sepia/60 text-xs font-semibold">
-          {(review.userName ?? "?")[0]?.toUpperCase()}
-        </div>
-      )}
+      <Avatar image={review.userImage} name={review.userName} />
       <div className="flex-1 min-w-0">
         <div className="flex items-center gap-2 flex-wrap">
           <span className="text-xs font-semibold text-leather-dark">
             {review.userName ?? "Пользователь"}
             {isOwn && <span className="ml-1 text-sepia/40 font-normal">(вы)</span>}
+            {isEdited && <span className="ml-1 text-sepia/40 font-normal">(ред)</span>}
           </span>
           <Stars value={review.rating} size={12} />
+          {isOwn && (
+            <div className="flex items-center gap-1.5 ml-auto">
+              <button
+                onClick={onEdit}
+                className="text-[10px] text-sepia/50 hover:text-sepia transition-colors"
+              >
+                Изменить
+              </button>
+              <span className="text-sepia/20 text-[10px]">·</span>
+              <button
+                onClick={onDelete}
+                disabled={deleting}
+                className="text-[10px] text-burgundy/50 hover:text-burgundy transition-colors disabled:opacity-40"
+              >
+                Удалить
+              </button>
+            </div>
+          )}
         </div>
         {review.reviewText && (
           <p className="text-xs text-sepia/80 mt-1 leading-relaxed">{review.reviewText}</p>

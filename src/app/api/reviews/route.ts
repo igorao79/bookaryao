@@ -68,3 +68,22 @@ export async function POST(request: Request) {
 
   return NextResponse.json(review);
 }
+
+export async function DELETE(request: Request) {
+  const session = await auth();
+  if (!session?.user?.id) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
+  const { searchParams } = new URL(request.url);
+  const bookKey = searchParams.get("bookKey");
+  if (!bookKey) {
+    return NextResponse.json({ error: "bookKey required" }, { status: 400 });
+  }
+
+  await db
+    .delete(reviews)
+    .where(and(eq(reviews.userId, session.user.id), eq(reviews.bookKey, bookKey)));
+
+  return NextResponse.json({ ok: true });
+}

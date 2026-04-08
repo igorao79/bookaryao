@@ -2,10 +2,12 @@
 
 import Link from "next/link";
 import { useState } from "react";
+import { useSession } from "next-auth/react";
 import { AuthButton } from "./AuthButton";
 
 export function Navbar() {
   const [menuOpen, setMenuOpen] = useState(false);
+  const { data: session } = useSession();
 
   return (
     <nav className="sticky top-0 z-50 border-b border-gold/20 bg-parchment/90 backdrop-blur-md">
@@ -92,21 +94,25 @@ export function Navbar() {
 
           {/* Desktop nav */}
           <div className="hidden sm:flex items-center gap-6">
-            <Link
-              href="/"
-              className="text-sm text-sepia/80 hover:text-burgundy tracking-wide transition-colors uppercase"
-              style={{ letterSpacing: "0.1em" }}
-            >
-              Главная
-            </Link>
-            <Link
-              href="/profile"
-              className="text-sm text-sepia/80 hover:text-burgundy tracking-wide transition-colors uppercase"
-              style={{ letterSpacing: "0.1em" }}
-            >
-              Мои книги
-            </Link>
-            <div className="w-px h-5 bg-gold/30" />
+            {session && (
+              <>
+                <Link
+                  href="/"
+                  className="text-sm text-sepia/80 hover:text-burgundy tracking-wide transition-colors uppercase"
+                  style={{ letterSpacing: "0.1em" }}
+                >
+                  Главная
+                </Link>
+                <Link
+                  href="/profile"
+                  className="text-sm text-sepia/80 hover:text-burgundy tracking-wide transition-colors uppercase"
+                  style={{ letterSpacing: "0.1em" }}
+                >
+                  Мои книги
+                </Link>
+                <div className="w-px h-5 bg-gold/30" />
+              </>
+            )}
             <AuthButton />
           </div>
 
@@ -135,21 +141,25 @@ export function Navbar() {
         {menuOpen && (
           <div className="sm:hidden pb-4 border-t border-gold/20 pt-3 animate-fade-in">
             <div className="flex flex-col gap-3">
-              <Link
-                href="/"
-                onClick={() => setMenuOpen(false)}
-                className="text-sm text-sepia/80 uppercase tracking-widest"
-              >
-                Главная
-              </Link>
-              <Link
-                href="/profile"
-                onClick={() => setMenuOpen(false)}
-                className="text-sm text-sepia/80 uppercase tracking-widest"
-              >
-                Мои книги
-              </Link>
-              <div className="pt-2 border-t border-gold/20">
+              {session && (
+                <>
+                  <Link
+                    href="/"
+                    onClick={() => setMenuOpen(false)}
+                    className="text-sm text-sepia/80 uppercase tracking-widest"
+                  >
+                    Главная
+                  </Link>
+                  <Link
+                    href="/profile"
+                    onClick={() => setMenuOpen(false)}
+                    className="text-sm text-sepia/80 uppercase tracking-widest"
+                  >
+                    Мои книги
+                  </Link>
+                </>
+              )}
+              <div className={session ? "pt-2 border-t border-gold/20" : ""}>
                 <AuthButton />
               </div>
             </div>

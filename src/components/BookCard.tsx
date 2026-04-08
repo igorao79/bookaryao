@@ -240,7 +240,7 @@ function CollectionCard({ book, onDelete, onFindSimilar, onReviewClick }: Collec
           {onReviewClick && (
             <button
               onClick={() => onReviewClick(book)}
-              className="w-full py-1.5 text-[11px] tracking-wide bg-parchment-light/10 border border-gold/40 text-gold/90 rounded hover:bg-gold/20 transition-colors"
+              className="w-full py-1.5 text-xs tracking-wide bg-parchment-light/10 border border-gold/40 text-gold/90 rounded hover:bg-gold/20 transition-colors"
               style={{ fontFamily: "var(--font-playfair), serif" }}
             >
               Посмотреть отзывы
@@ -270,7 +270,7 @@ function CollectionCard({ book, onDelete, onFindSimilar, onReviewClick }: Collec
           {onFindSimilar && (
             <button
               onClick={() => onFindSimilar(book)}
-              className="flex-1 py-1.5 text-[10px] tracking-wide bg-leather/10 border border-leather/30 text-leather-dark rounded hover:bg-leather hover:text-parchment-light transition-colors"
+              className="flex-1 py-1.5 text-xs tracking-wide bg-leather/10 border border-leather/30 text-leather-dark rounded hover:bg-leather hover:text-parchment-light transition-colors"
               style={{ fontFamily: "var(--font-playfair), serif" }}
             >
               Найти похожее
@@ -278,7 +278,7 @@ function CollectionCard({ book, onDelete, onFindSimilar, onReviewClick }: Collec
           )}
           <button
             onClick={() => onDelete(book.id)}
-            className="py-1.5 px-2.5 text-[10px] tracking-wide border border-burgundy/30 text-burgundy/70 rounded hover:bg-burgundy hover:text-parchment-light transition-colors"
+            className="py-1.5 px-2.5 text-xs tracking-wide border border-burgundy/30 text-burgundy/70 rounded hover:bg-burgundy hover:text-parchment-light transition-colors"
             style={{ fontFamily: "var(--font-playfair), serif" }}
           >
             Удалить
