@@ -108,14 +108,27 @@ export const reviews = sqliteTable("reviews", {
     .$defaultFn(() => new Date()),
 });
 
+export const userPreferences = sqliteTable("user_preferences", {
+  userId: text("user_id")
+    .primaryKey()
+    .references(() => users.id, { onDelete: "cascade" }),
+  rejectionHistory: text("rejection_history").notNull().default("[]"),
+  updatedAt: integer("updated_at", { mode: "timestamp" })
+    .$defaultFn(() => new Date()),
+});
+
 // ── Relations ───────────────────────────────────────────────────────
 
-export const usersRelations = relations(users, ({ many }) => ({
+export const usersRelations = relations(users, ({ many, one }) => ({
   accounts: many(accounts),
   sessions: many(sessions),
   savedBooks: many(savedBooks),
   searchHistory: many(searchHistory),
   reviews: many(reviews),
+  preferences: one(userPreferences, {
+    fields: [users.id],
+    references: [userPreferences.userId],
+  }),
 }));
 
 export const savedBooksRelations = relations(savedBooks, ({ one }) => ({
@@ -128,4 +141,11 @@ export const searchHistoryRelations = relations(searchHistory, ({ one }) => ({
 
 export const reviewsRelations = relations(reviews, ({ one }) => ({
   user: one(users, { fields: [reviews.userId], references: [users.id] }),
+}));
+
+export const userPreferencesRelations = relations(userPreferences, ({ one }) => ({
+  user: one(users, {
+    fields: [userPreferences.userId],
+    references: [users.id],
+  }),
 }));
