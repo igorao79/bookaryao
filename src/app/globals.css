@@ -1,5 +1,16 @@
 @import "tailwindcss";
 
+button, a, [role="button"],
+input[type="submit"], input[type="reset"], input[type="button"],
+select, label[for],
+[onClick], summary {
+  cursor: pointer;
+}
+
+button:disabled {
+  cursor: not-allowed;
+}
+
 :root {
   --parchment: #f5efe0;
   --parchment-light: #faf7f0;

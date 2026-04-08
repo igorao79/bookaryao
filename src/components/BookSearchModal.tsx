@@ -4,15 +4,28 @@ import { useState, useEffect, useCallback } from "react";
 import { SearchFromScratch } from "./SearchFromScratch";
 import { SearchBySimilar } from "./SearchBySimilar";
 
+export interface SearchPrefill {
+  bookTitle: string;
+  author: string;
+  genres: string[];
+}
+
 interface BookSearchModalProps {
   isOpen: boolean;
   onClose: () => void;
+  prefill?: SearchPrefill;
+  initialMode?: "similar" | "scratch";
 }
 
 type SearchMode = "choose" | "scratch" | "similar";
 
-export function BookSearchModal({ isOpen, onClose }: BookSearchModalProps) {
-  const [mode, setMode] = useState<SearchMode>("choose");
+export function BookSearchModal({ isOpen, onClose, prefill, initialMode }: BookSearchModalProps) {
+  const [mode, setMode] = useState<SearchMode>(initialMode ?? "choose");
+
+  // Re-sync mode when modal opens with a new initialMode
+  useEffect(() => {
+    if (isOpen) setMode(initialMode ?? "choose");
+  }, [isOpen, initialMode]);
 
   const handleClose = useCallback(() => {
     setMode("choose");
@@ -65,7 +78,7 @@ export function BookSearchModal({ isOpen, onClose }: BookSearchModalProps) {
               {mode === "scratch" && "Открой что-то новое"}
               {mode === "similar" && "Найди похожую книгу"}
             </h2>
-            {mode !== "choose" && (
+            {mode !== "choose" && !prefill && (
               <button
                 onClick={() => setMode("choose")}
                 className="text-xs text-sepia/60 hover:text-burgundy mt-1 flex items-center gap-1 transition-colors"
@@ -159,7 +172,7 @@ export function BookSearchModal({ isOpen, onClose }: BookSearchModalProps) {
           )}
 
           {mode === "scratch" && <SearchFromScratch onClose={handleClose} />}
-          {mode === "similar" && <SearchBySimilar onClose={handleClose} />}
+          {mode === "similar" && <SearchBySimilar onClose={handleClose} prefill={prefill} />}
         </div>
       </div>
     </div>

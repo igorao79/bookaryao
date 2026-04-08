@@ -1,9 +1,11 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useRef, useEffect } from "react";
 import { useBookSearch } from "@/hooks/useBookSearch";
 import { BookCard } from "./BookCard";
 import { RejectFeedback } from "./RejectFeedback";
+import { Toast } from "./Toast";
+import type { ToastType } from "./Toast";
 
 const GENRES = [
   "Художественная литература",
@@ -29,9 +31,14 @@ interface SearchFromScratchProps {
 }
 
 export function SearchFromScratch({ onClose }: SearchFromScratchProps) {
-  const [genre, setGenre] = useState("");
+  const [selectedGenres, setSelectedGenres] = useState<string[]>([]);
+  const [customGenres, setCustomGenres] = useState<string[]>([]);
   const [description, setDescription] = useState("");
   const [showReject, setShowReject] = useState(false);
+  const [addingCustom, setAddingCustom] = useState(false);
+  const [toast, setToast] = useState<{ message: string; type: ToastType } | null>(null);
+  const [customInput, setCustomInput] = useState("");
+  const customInputRef = useRef<HTMLInputElement>(null);
 
   const {
     recommendation,
@@ -44,13 +51,45 @@ export function SearchFromScratch({ onClose }: SearchFromScratchProps) {
     reset,
   } = useBookSearch();
 
+  useEffect(() => {
+    if (addingCustom) customInputRef.current?.focus();
+  }, [addingCustom]);
+
+  const allGenres = [...GENRES, ...customGenres];
   const charCount = description.length;
-  const isValid = genre && charCount >= 50;
+  const isValid = selectedGenres.length > 0 && charCount >= 50;
+
+  function toggleGenre(g: string) {
+    setSelectedGenres((prev) =>
+      prev.includes(g) ? prev.filter((x) => x !== g) : [...prev, g]
+    );
+  }
+
+  function handleAddCustom() {
+    const val = customInput.trim();
+    if (!val) return setAddingCustom(false);
+    if (!customGenres.includes(val) && !GENRES.includes(val)) {
+      setCustomGenres((prev) => [...prev, val]);
+      setSelectedGenres((prev) => [...prev, val]);
+    }
+    setCustomInput("");
+    setAddingCustom(false);
+  }
+
+  function handleCustomKeyDown(e: React.KeyboardEvent) {
+    if (e.key === "Enter") handleAddCustom();
+    if (e.key === "Escape") { setAddingCustom(false); setCustomInput(""); }
+  }
+
+  function removeCustomGenre(g: string) {
+    setCustomGenres((prev) => prev.filter((x) => x !== g));
+    setSelectedGenres((prev) => prev.filter((x) => x !== g));
+  }
 
   async function handleSearch() {
     await search({
       type: "scratch",
-      genre,
+      genre: selectedGenres.join(", "),
       description,
       rejectedBooks: [],
     });
@@ -59,13 +98,11 @@ export function SearchFromScratch({ onClose }: SearchFromScratchProps) {
   async function handleSave() {
     const success = await save();
     if (success) {
-      reset();
-      onClose();
+      setToast({ message: "Книга сохранена в коллекцию!", type: "success" });
+      setTimeout(() => { reset(); onClose(); }, 1200);
+    } else {
+      setToast({ message: "Не удалось сохранить. Попробуйте ещё раз.", type: "error" });
     }
-  }
-
-  function handleRejectClick() {
-    setShowReject(true);
   }
 
   async function handleRejectSubmit(reason: string) {
@@ -73,38 +110,31 @@ export function SearchFromScratch({ onClose }: SearchFromScratchProps) {
     await reject(reason);
   }
 
-  // Show result
   if (recommendation) {
     return (
       <div>
+        {toast && <Toast message={toast.message} type={toast.type} onDone={() => setToast(null)} />}
         <BookCard
           variant="recommendation"
           book={recommendation}
           onSave={handleSave}
-          onReject={handleRejectClick}
+          onReject={() => setShowReject(true)}
           isSaving={isSaving}
+          userQuery={`${selectedGenres.join(" ")} ${description}`}
         />
-
         {showReject && (
           <RejectFeedback
             onSubmit={handleRejectSubmit}
             onCancel={() => setShowReject(false)}
           />
         )}
-
-        {error && (
-          <p className="text-burgundy text-sm mt-3 text-center">{error}</p>
-        )}
+        {error && <p className="text-burgundy text-sm mt-3 text-center">{error}</p>}
       </div>
     );
   }
 
-  // Show loading
-  if (isSearching) {
-    return <LoadingSkeleton />;
-  }
+  if (isSearching) return <LoadingSkeleton />;
 
-  // Show form
   return (
     <div className="space-y-5">
       {/* Genre */}
@@ -113,22 +143,71 @@ export function SearchFromScratch({ onClose }: SearchFromScratchProps) {
           className="block text-sm text-leather-dark mb-2 tracking-wide"
           style={{ fontFamily: "var(--font-playfair), serif" }}
         >
-          Жанр
+          Жанры
+          {selectedGenres.length > 0 && (
+            <span className="ml-2 text-xs text-sepia/50">
+              выбрано: {selectedGenres.length}
+            </span>
+          )}
         </label>
         <div className="flex flex-wrap gap-2">
-          {GENRES.map((g) => (
+          {allGenres.map((g) => {
+            const selected = selectedGenres.includes(g);
+            const isCustom = customGenres.includes(g);
+            return (
+              <button
+                key={g}
+                onClick={() => toggleGenre(g)}
+                className={`group relative px-3 py-1.5 text-xs rounded border transition-all ${
+                  selected
+                    ? "bg-sepia text-parchment border-sepia"
+                    : "border-gold/40 text-sepia/70 hover:border-sepia/50"
+                }`}
+              >
+                {selected && (
+                  <span className="mr-1 opacity-70">✓</span>
+                )}
+                {g}
+                {/* Remove button for custom genres */}
+                {isCustom && !selected && (
+                  <span
+                    role="button"
+                    onClick={(e) => { e.stopPropagation(); removeCustomGenre(g); }}
+                    className="ml-1.5 opacity-40 hover:opacity-80 transition-opacity"
+                  >
+                    ×
+                  </span>
+                )}
+              </button>
+            );
+          })}
+
+          {/* Add custom genre */}
+          {addingCustom ? (
+            <div className="flex items-center gap-1">
+              <input
+                ref={customInputRef}
+                value={customInput}
+                onChange={(e) => setCustomInput(e.target.value)}
+                onKeyDown={handleCustomKeyDown}
+                onBlur={handleAddCustom}
+                placeholder="Свой жанр..."
+                className="px-3 py-1.5 text-xs border border-sepia/50 rounded bg-cream text-ink focus:outline-none focus:border-sepia w-32"
+                maxLength={30}
+              />
+            </div>
+          ) : (
             <button
-              key={g}
-              onClick={() => setGenre(g)}
-              className={`px-3 py-1.5 text-xs rounded border transition-all ${
-                genre === g
-                  ? "bg-sepia text-parchment border-sepia"
-                  : "border-gold/40 text-sepia/70 hover:border-sepia/50"
-              }`}
+              onClick={() => setAddingCustom(true)}
+              className="px-3 py-1.5 text-xs rounded border border-dashed border-gold/50 text-gold/70 hover:border-gold hover:text-gold transition-all flex items-center gap-1"
+              title="Добавить свой жанр"
             >
-              {g}
+              <svg width="10" height="10" viewBox="0 0 10 10" fill="currentColor">
+                <path d="M4 0h2v4h4v2H6v4H4V6H0V4h4V0z" />
+              </svg>
+              Свой жанр
             </button>
-          ))}
+          )}
         </div>
       </div>
 
@@ -149,14 +228,8 @@ export function SearchFromScratch({ onClose }: SearchFromScratchProps) {
           maxLength={500}
         />
         <div className="flex justify-between mt-1">
-          <span
-            className={`text-xs ${
-              charCount < 50 ? "text-burgundy" : "text-sepia/50"
-            }`}
-          >
-            {charCount < 50
-              ? `Ещё ${50 - charCount} символов`
-              : "Отлично!"}
+          <span className={`text-xs ${charCount < 50 ? "text-burgundy" : "text-sepia/50"}`}>
+            {charCount < 50 ? `Ещё ${50 - charCount} символов` : "Отлично!"}
           </span>
           <span className="text-xs text-sepia/40">{charCount}/500</span>
         </div>

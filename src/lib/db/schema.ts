@@ -92,6 +92,22 @@ export const searchHistory = sqliteTable("search_history", {
     .$defaultFn(() => new Date()),
 });
 
+export const reviews = sqliteTable("reviews", {
+  id: text("id")
+    .primaryKey()
+    .$defaultFn(() => crypto.randomUUID()),
+  userId: text("user_id")
+    .notNull()
+    .references(() => users.id, { onDelete: "cascade" }),
+  bookKey: text("book_key").notNull(),
+  rating: integer("rating").notNull(),
+  reviewText: text("review_text"),
+  userName: text("user_name"),
+  userImage: text("user_image"),
+  createdAt: integer("created_at", { mode: "timestamp" })
+    .$defaultFn(() => new Date()),
+});
+
 // ── Relations ───────────────────────────────────────────────────────
 
 export const usersRelations = relations(users, ({ many }) => ({
@@ -99,6 +115,7 @@ export const usersRelations = relations(users, ({ many }) => ({
   sessions: many(sessions),
   savedBooks: many(savedBooks),
   searchHistory: many(searchHistory),
+  reviews: many(reviews),
 }));
 
 export const savedBooksRelations = relations(savedBooks, ({ one }) => ({
@@ -107,4 +124,8 @@ export const savedBooksRelations = relations(savedBooks, ({ one }) => ({
 
 export const searchHistoryRelations = relations(searchHistory, ({ one }) => ({
   user: one(users, { fields: [searchHistory.userId], references: [users.id] }),
+}));
+
+export const reviewsRelations = relations(reviews, ({ one }) => ({
+  user: one(users, { fields: [reviews.userId], references: [users.id] }),
 }));

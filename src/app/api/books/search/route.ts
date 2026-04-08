@@ -34,7 +34,7 @@ export async function POST(request: Request) {
   // Build prompt based on search type
   let prompts: { system: string; user: string };
   if (data.type === "scratch") {
-    userGenres = [data.genre];
+    userGenres = data.genre.split(",").map((g) => g.trim()).filter(Boolean);
     prompts = buildSearchFromScratchPrompt(
       data.genre,
       data.description,
@@ -70,17 +70,22 @@ export async function POST(request: Request) {
       // Enrich with cover if missing
       const enrichedBook = await enrichBookWithCover(book);
 
-      // Determine matching genres
-      const matchingGenres = enrichedBook.genres.filter((g) =>
-        userGenres.some(
-          (ug) =>
-            g.toLowerCase().includes(ug.toLowerCase()) ||
-            ug.toLowerCase().includes(g.toLowerCase())
+      // Merge user genres (Russian) + book genres (English), dedup
+      const bookGenresLower = enrichedBook.genres.map((g) => g.toLowerCase());
+      const extraBookGenres = enrichedBook.genres.filter(
+        (g) => !userGenres.some(
+          (ug) => g.toLowerCase().includes(ug.toLowerCase()) ||
+                  ug.toLowerCase().includes(g.toLowerCase())
         )
       );
+      const mergedGenres = [...userGenres, ...extraBookGenres];
+
+      // All user genres are matching (AI was instructed to find them)
+      const matchingGenres = userGenres;
 
       const recommendation: BookRecommendation = {
         ...enrichedBook,
+        genres: mergedGenres,
         aiSummary: aiSuggestion.whyItMatches,
         matchingGenres,
       };

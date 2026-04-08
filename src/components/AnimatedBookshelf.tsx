@@ -59,16 +59,13 @@ function generateBooks(count: number, seed: number): BookDef[] {
 
 const ROWS = 6;
 const BOOKS_PER_ROW = 40;
-
-// Center ~40% of books are in the "text zone" — don't animate those
 const SAFE_MIN = Math.floor(BOOKS_PER_ROW * 0.25);
 const SAFE_MAX = Math.floor(BOOKS_PER_ROW * 0.75);
-// Top rows overlap with text — only animate bottom rows
-const SAFE_ROW_MIN = 4; // only rows 4-5 (bottom two)
+const SAFE_ROW_MIN = 4;
 
 function pickSafeBook(): { row: number; col: number } {
-  const row = SAFE_ROW_MIN + Math.floor(Math.random() * (ROWS - SAFE_ROW_MIN));
-  // Pick from left or right edges only
+  const row =
+    SAFE_ROW_MIN + Math.floor(Math.random() * (ROWS - SAFE_ROW_MIN));
   const side = Math.random() < 0.5 ? "left" : "right";
   const col =
     side === "left"
@@ -108,7 +105,6 @@ export function AnimatedBookshelf() {
     }, 700);
   }, []);
 
-  // Typing
   useEffect(() => {
     if (phase !== "typing") return;
     let i = 0;
@@ -130,14 +126,12 @@ export function AnimatedBookshelf() {
     return () => clearInterval(interval);
   }, [phase, genre]);
 
-  // Cycle
   useEffect(() => {
     if (phase !== "idle") return;
     const t = setTimeout(pickRandom, 1500);
     return () => clearTimeout(t);
   }, [phase, pickRandom]);
 
-  // Initial
   useEffect(() => {
     const t = setTimeout(pickRandom, 800);
     return () => {
@@ -177,34 +171,41 @@ export function AnimatedBookshelf() {
               return (
                 <div
                   key={colIdx}
-                  className="relative"
                   style={{
                     flex: book.widthFr,
                     overflow: "visible",
+                    position: "relative",
                   }}
                 >
-                  {/* Genre bubble — child of the book, always centered */}
+                  {/* Bubble: positioned via wrapper that matches book position */}
                   {showBubble && (
                     <div
-                      className="absolute z-30 whitespace-nowrap"
                       style={{
+                        position: "absolute",
                         bottom: book.height + 30,
-                        left: "50%",
-                        transform: "translateX(-50%)",
-                        animation: "bubbleIn 0.3s ease-out both",
+                        left: 0,
+                        right: 0,
+                        display: "flex",
+                        justifyContent: "center",
+                        zIndex: 30,
                       }}
                     >
                       <div
-                        className="relative px-3 py-1.5 rounded-lg"
                         style={{
                           background: "#faf7f0",
                           border: "1px solid rgba(197,165,90,0.4)",
                           boxShadow: "0 4px 16px rgba(0,0,0,0.15)",
+                          borderRadius: 8,
+                          padding: "6px 12px",
+                          whiteSpace: "nowrap",
+                          position: "relative",
                         }}
                       >
                         <span
-                          className="text-xs font-medium tracking-wide"
                           style={{
+                            fontSize: 12,
+                            fontWeight: 500,
+                            letterSpacing: "0.05em",
                             color: book.color,
                             fontFamily: "var(--font-playfair), serif",
                           }}
@@ -212,22 +213,31 @@ export function AnimatedBookshelf() {
                           {typedText}
                           {phase === "typing" && (
                             <span
-                              className="inline-block w-[1.5px] h-3 ml-0.5 -mb-0.5"
                               style={{
+                                display: "inline-block",
+                                width: 1.5,
+                                height: 12,
+                                marginLeft: 2,
+                                marginBottom: -2,
                                 background: book.color,
                                 animation:
-                                  "cursorBlink 0.7s step-end infinite",
+                                  "shelf-cursor 0.7s step-end infinite",
                               }}
                             />
                           )}
                         </span>
                         {/* Arrow */}
                         <div
-                          className="absolute left-1/2 -translate-x-1/2 -bottom-[6px] w-3 h-3 rotate-45"
                           style={{
+                            position: "absolute",
+                            left: "50%",
+                            bottom: -6,
+                            width: 10,
+                            height: 10,
                             background: "#faf7f0",
                             borderRight: "1px solid rgba(197,165,90,0.4)",
                             borderBottom: "1px solid rgba(197,165,90,0.4)",
+                            transform: "translateX(-50%) rotate(45deg)",
                           }}
                         />
                       </div>
@@ -236,12 +246,15 @@ export function AnimatedBookshelf() {
 
                   {/* Book spine */}
                   <div
-                    className="mx-[1px] rounded-t-sm"
                     style={{
                       height: book.height,
+                      margin: "0 1px",
+                      borderRadius: "2px 2px 0 0",
                       background: `linear-gradient(to right, ${book.color}dd, ${book.color}, ${book.color}cc)`,
                       opacity: isActive ? 0.45 : 0.07,
-                      transform: isUp ? "translateY(-24px)" : "translateY(0)",
+                      transform: isUp
+                        ? "translateY(-24px)"
+                        : "translateY(0)",
                       transition: isUp
                         ? "transform 0.7s cubic-bezier(0.34, 1.56, 0.64, 1), opacity 0.3s"
                         : isFalling
@@ -255,18 +268,21 @@ export function AnimatedBookshelf() {
                     {book.hasStripes && (
                       <>
                         <div
-                          className="mx-auto mt-[15%] rounded-full"
                           style={{
                             width: "60%",
                             height: 1,
+                            margin: "0 auto",
+                            marginTop: "15%",
+                            borderRadius: 9999,
                             background: `${book.accent}66`,
                           }}
                         />
                         <div
-                          className="mx-auto mt-1 rounded-full"
                           style={{
                             width: "40%",
                             height: 1,
+                            margin: "4px auto 0",
+                            borderRadius: 9999,
                             background: `${book.accent}44`,
                           }}
                         />
@@ -281,23 +297,13 @@ export function AnimatedBookshelf() {
       </div>
 
       <style jsx>{`
-        @keyframes cursorBlink {
+        @keyframes shelf-cursor {
           0%,
           100% {
             opacity: 1;
           }
           50% {
             opacity: 0;
-          }
-        }
-        @keyframes bubbleIn {
-          from {
-            opacity: 0;
-            transform: translateX(-50%) translateY(8px) scale(0.9);
-          }
-          to {
-            opacity: 1;
-            transform: translateX(-50%) translateY(0) scale(1);
           }
         }
       `}</style>

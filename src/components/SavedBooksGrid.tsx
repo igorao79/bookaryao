@@ -1,12 +1,19 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
+import { useSession } from "next-auth/react";
 import { BookCard } from "./BookCard";
+import { BookSearchModal } from "./BookSearchModal";
+import { ReviewModal } from "./ReviewModal";
 import type { SavedBook } from "@/types";
+import type { SearchPrefill } from "./BookSearchModal";
 
 export function SavedBooksGrid() {
+  const { data: session } = useSession();
   const [books, setBooks] = useState<SavedBook[]>([]);
   const [loading, setLoading] = useState(true);
+  const [modalPrefill, setModalPrefill] = useState<SearchPrefill | null>(null);
+  const [reviewBook, setReviewBook] = useState<SavedBook | null>(null);
 
   const fetchBooks = useCallback(async () => {
     try {
@@ -33,6 +40,14 @@ export function SavedBooksGrid() {
     if (res.ok) {
       setBooks((prev) => prev.filter((b) => b.id !== id));
     }
+  }
+
+  function handleFindSimilar(book: SavedBook) {
+    setModalPrefill({
+      bookTitle: book.title,
+      author: book.author,
+      genres: book.genres,
+    });
   }
 
   if (loading) {
@@ -79,15 +94,36 @@ export function SavedBooksGrid() {
   }
 
   return (
-    <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4 stagger-children">
-      {books.map((book) => (
-        <BookCard
-          key={book.id}
-          variant="collection"
-          book={book}
-          onDelete={handleDelete}
+    <>
+      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4 stagger-children">
+        {books.map((book) => (
+          <BookCard
+            key={book.id}
+            variant="collection"
+            book={book}
+            onDelete={handleDelete}
+            onFindSimilar={handleFindSimilar}
+            onReviewClick={setReviewBook}
+          />
+        ))}
+      </div>
+
+      <BookSearchModal
+        isOpen={Boolean(modalPrefill)}
+        onClose={() => setModalPrefill(null)}
+        prefill={modalPrefill ?? undefined}
+        initialMode="similar"
+      />
+
+      {reviewBook && (
+        <ReviewModal
+          isOpen={Boolean(reviewBook)}
+          onClose={() => setReviewBook(null)}
+          bookKey={reviewBook.googleBooksId ?? reviewBook.openLibraryKey ?? reviewBook.id}
+          bookTitle={reviewBook.title}
+          currentUserId={session?.user?.id}
         />
-      ))}
-    </div>
+      )}
+    </>
   );
 }

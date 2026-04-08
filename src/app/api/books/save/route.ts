@@ -4,6 +4,7 @@ import { db } from "@/lib/db";
 import { savedBooks } from "@/lib/db/schema";
 import { saveBookSchema } from "@/types";
 import { uploadBookCover } from "@/lib/cloudinary";
+import { or, eq } from "drizzle-orm";
 
 export async function POST(request: Request) {
   const session = await auth();
@@ -23,10 +24,28 @@ export async function POST(request: Request) {
   const data = parsed.data;
   const bookId = crypto.randomUUID();
 
-  // Upload cover to Cloudinary (graceful failure)
+  // Reuse existing Cloudinary cover if this book was already saved by anyone
   let cloudinaryCoverUrl: string | null = null;
   if (data.coverUrl) {
-    cloudinaryCoverUrl = await uploadBookCover(data.coverUrl, bookId);
+    if (data.googleBooksId || data.openLibraryKey) {
+      const conditions = [];
+      if (data.googleBooksId) conditions.push(eq(savedBooks.googleBooksId, data.googleBooksId));
+      if (data.openLibraryKey) conditions.push(eq(savedBooks.openLibraryKey, data.openLibraryKey));
+
+      const existing = await db
+        .select({ coverUrl: savedBooks.coverUrl })
+        .from(savedBooks)
+        .where(or(...conditions))
+        .limit(1);
+
+      if (existing[0]?.coverUrl?.includes("cloudinary.com")) {
+        cloudinaryCoverUrl = existing[0].coverUrl;
+      }
+    }
+
+    if (!cloudinaryCoverUrl) {
+      cloudinaryCoverUrl = await uploadBookCover(data.coverUrl, bookId);
+    }
   }
 
   const [saved] = await db

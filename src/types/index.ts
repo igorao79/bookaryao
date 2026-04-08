@@ -35,6 +35,19 @@ export interface SavedBook {
   googleBooksId: string | null;
   openLibraryKey: string | null;
   createdAt: Date | null;
+  avgRating?: number;
+  reviewCount?: number;
+}
+
+export interface Review {
+  id: string;
+  userId: string;
+  bookKey: string;
+  rating: number;
+  reviewText: string | null;
+  userName: string | null;
+  userImage: string | null;
+  createdAt: Date | null;
 }
 
 // ── AI response ─────────────────────────────────────────────────────
