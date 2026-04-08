@@ -5,12 +5,20 @@ import type { RejectedBook, RejectedBookWithDate } from "@/types";
 
 const MAX_HISTORY = 50;
 
+function safeParseHistory(json: string): RejectedBookWithDate[] {
+  try {
+    return JSON.parse(json) as RejectedBookWithDate[];
+  } catch {
+    return [];
+  }
+}
+
 export async function getUserPreferences(userId: string): Promise<RejectedBookWithDate[]> {
   const record = await db.query.userPreferences.findFirst({
     where: eq(userPreferences.userId, userId),
   });
   if (!record) return [];
-  return JSON.parse(record.rejectionHistory) as RejectedBookWithDate[];
+  return safeParseHistory(record.rejectionHistory);
 }
 
 export async function appendRejection(
@@ -22,17 +30,25 @@ export async function appendRejection(
     rejectedAt: new Date().toISOString(),
   };
 
-  const existing = await getUserPreferences(userId);
-  const updated = mergeRejection(existing, incoming, MAX_HISTORY);
-  const json = JSON.stringify(updated);
-
-  await db
-    .insert(userPreferences)
-    .values({ userId, rejectionHistory: json, updatedAt: new Date() })
-    .onConflictDoUpdate({
-      target: userPreferences.userId,
-      set: { rejectionHistory: json, updatedAt: new Date() },
+  await db.transaction(async (tx) => {
+    const record = await tx.query.userPreferences.findFirst({
+      where: eq(userPreferences.userId, userId),
     });
+    const existing: RejectedBookWithDate[] = record
+      ? safeParseHistory(record.rejectionHistory)
+      : [];
+    const updated = mergeRejection(existing, incoming, MAX_HISTORY);
+    const json = JSON.stringify(updated);
+    const now = new Date();
+
+    await tx
+      .insert(userPreferences)
+      .values({ userId, rejectionHistory: json, updatedAt: now })
+      .onConflictDoUpdate({
+        target: userPreferences.userId,
+        set: { rejectionHistory: json, updatedAt: now },
+      });
+  });
 }
 
 export function mergeRejection(

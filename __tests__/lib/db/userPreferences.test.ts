@@ -30,7 +30,7 @@ describe("mergeRejection", () => {
     const result = mergeRejection(existing, { title: "New Book", author: "Author", reason: "reason", rejectedAt: "2026-04-09T00:00:00.000Z" }, 50);
     expect(result).toHaveLength(50);
     expect(result[49].title).toBe("New Book");
-    expect(result[0].title).toBe("Book 1"); // Book 0 was dropped
+    expect(result.map(b => b.title)).not.toContain("Book 0");
   });
 
   it("keeps the last maxHistory entries after trim", () => {
@@ -42,5 +42,13 @@ describe("mergeRejection", () => {
     expect(result).toHaveLength(2);
     expect(result[0].title).toBe("Middle");
     expect(result[1].title).toBe("New");
+  });
+
+  it("allows the same book to appear multiple times (no deduplication)", () => {
+    const existing = [
+      { title: "Dune", author: "Herbert", reason: "Too long", rejectedAt: "2026-04-08T00:00:00.000Z" },
+    ];
+    const result = mergeRejection(existing, { title: "Dune", author: "Herbert", reason: "Too long", rejectedAt: "2026-04-09T00:00:00.000Z" }, 50);
+    expect(result).toHaveLength(2);
   });
 });
