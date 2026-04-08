@@ -1,7 +1,7 @@
 "use client";
 
 import { useSession } from "next-auth/react";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { BookSearchModal } from "@/components/BookSearchModal";
 import { AnimatedBookshelf } from "@/components/AnimatedBookshelf";
 
@@ -9,10 +9,15 @@ export default function Home() {
   const { data: session } = useSession();
   const [modalOpen, setModalOpen] = useState(false);
 
+  useEffect(() => {
+    document.body.style.overflow = "hidden";
+    return () => { document.body.style.overflow = ""; };
+  }, []);
+
   return (
     <>
       {/* Hero */}
-      <section className="relative overflow-hidden min-h-[calc(100vh-4rem)]">
+      <section className="relative overflow-hidden h-[calc(100vh-4rem)]">
         {/* Animated bookshelf background */}
         <AnimatedBookshelf />
 

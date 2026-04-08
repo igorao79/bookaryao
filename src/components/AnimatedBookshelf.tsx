@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback, useRef } from "react";
+import { useState, useEffect, useCallback, useRef, useMemo } from "react";
 
 const GENRES = [
   "Фэнтези",
@@ -40,11 +40,13 @@ const PALETTE = [
   { color: "#2d3a5e", accent: "#a0b4d4" },
 ];
 
-function generateBooks(count: number, seed: number): BookDef[] {
+function generateBooks(count: number, seed: number, mobile: boolean): BookDef[] {
   const books: BookDef[] = [];
   for (let i = 0; i < count; i++) {
     const ci = (i + seed) % PALETTE.length;
-    const fr = 3 + ((i * 7 + seed * 3) % 5);
+    const fr = mobile
+      ? 6 + ((i * 7 + seed * 3) % 5)   // 6–10 on mobile
+      : 3 + ((i * 7 + seed * 3) % 5);   // 3–7 on desktop
     const h = 55 + ((i * 5 + seed) % 25);
     books.push({
       widthFr: fr,
@@ -58,19 +60,20 @@ function generateBooks(count: number, seed: number): BookDef[] {
 }
 
 const ROWS = 6;
-const BOOKS_PER_ROW = 40;
-const SAFE_MIN = Math.floor(BOOKS_PER_ROW * 0.25);
-const SAFE_MAX = Math.floor(BOOKS_PER_ROW * 0.75);
+const BOOKS_PER_ROW_DESKTOP = 40;
+const BOOKS_PER_ROW_MOBILE = 14;
 const SAFE_ROW_MIN = 4;
 
-function pickSafeBook(): { row: number; col: number } {
+function pickSafeBook(booksPerRow: number): { row: number; col: number } {
+  const safeMin = Math.floor(booksPerRow * 0.25);
+  const safeMax = Math.floor(booksPerRow * 0.75);
   const row =
     SAFE_ROW_MIN + Math.floor(Math.random() * (ROWS - SAFE_ROW_MIN));
   const side = Math.random() < 0.5 ? "left" : "right";
   const col =
     side === "left"
-      ? Math.floor(Math.random() * SAFE_MIN)
-      : SAFE_MAX + Math.floor(Math.random() * (BOOKS_PER_ROW - SAFE_MAX));
+      ? Math.floor(Math.random() * safeMin)
+      : safeMax + Math.floor(Math.random() * (booksPerRow - safeMax));
   return { row, col };
 }
 
@@ -88,12 +91,24 @@ export function AnimatedBookshelf() {
     undefined
   );
 
-  const [rows] = useState(() =>
-    Array.from({ length: ROWS }, (_, i) => generateBooks(BOOKS_PER_ROW, i * 7))
+  const [isMobile, setIsMobile] = useState(false);
+  useEffect(() => {
+    const mq = window.matchMedia("(max-width: 639px)");
+    setIsMobile(mq.matches);
+    const handler = (e: MediaQueryListEvent) => setIsMobile(e.matches);
+    mq.addEventListener("change", handler);
+    return () => mq.removeEventListener("change", handler);
+  }, []);
+
+  const booksPerRow = isMobile ? BOOKS_PER_ROW_MOBILE : BOOKS_PER_ROW_DESKTOP;
+
+  const rows = useMemo(
+    () => Array.from({ length: ROWS }, (_, i) => generateBooks(booksPerRow, i * 7, isMobile)),
+    [booksPerRow, isMobile]
   );
 
   const pickRandom = useCallback(() => {
-    const { row, col } = pickSafeBook();
+    const { row, col } = pickSafeBook(booksPerRow);
     const g = GENRES[Math.floor(Math.random() * GENRES.length)];
     setActiveBook({ row, col });
     setGenre(g);
@@ -103,7 +118,7 @@ export function AnimatedBookshelf() {
     timeoutRef.current = setTimeout(() => {
       setPhase("typing");
     }, 700);
-  }, []);
+  }, [booksPerRow]);
 
   useEffect(() => {
     if (phase !== "typing") return;
