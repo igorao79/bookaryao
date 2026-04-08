@@ -232,3 +232,13 @@ body::before {
 .animate-spin {
   animation: spin 1s linear infinite;
 }
+
+/* Book card delete animation */
+@keyframes deleteOut {
+  from { opacity: 1; transform: scale(1); }
+  to   { opacity: 0; transform: scale(0.82); }
+}
+.animate-delete-out {
+  animation: deleteOut 0.35s ease-in forwards;
+  pointer-events: none;
+}

@@ -14,6 +14,8 @@ export function SavedBooksGrid({ refreshKey }: { refreshKey?: number }) {
   const [loading, setLoading] = useState(true);
   const [modalPrefill, setModalPrefill] = useState<SearchPrefill | null>(null);
   const [reviewBook, setReviewBook] = useState<SavedBook | null>(null);
+  const [confirmDelete, setConfirmDelete] = useState<SavedBook | null>(null);
+  const [deletingId, setDeletingId] = useState<string | null>(null);
 
   const fetchBooks = useCallback(async () => {
     try {
@@ -38,13 +40,23 @@ export function SavedBooksGrid({ refreshKey }: { refreshKey?: number }) {
     fetchBooks();
   }, [fetchBooks, refreshKey, status]);
 
-  async function handleDelete(id: string) {
-    if (!confirm("Удалить эту книгу из коллекции?")) return;
+  function handleDelete(id: string) {
+    const book = books.find((b) => b.id === id);
+    if (book) setConfirmDelete(book);
+  }
+
+  async function executeDelete() {
+    if (!confirmDelete) return;
+    const id = confirmDelete.id;
+    setConfirmDelete(null);
+
+    // Play exit animation, then remove
+    setDeletingId(id);
+    await new Promise((r) => setTimeout(r, 360));
 
     const res = await fetch(`/api/books/${id}`, { method: "DELETE" });
-    if (res.ok) {
-      setBooks((prev) => prev.filter((b) => b.id !== id));
-    }
+    if (res.ok) setBooks((prev) => prev.filter((b) => b.id !== id));
+    setDeletingId(null);
   }
 
   function handleFindSimilar(book: SavedBook) {
@@ -109,6 +121,7 @@ export function SavedBooksGrid({ refreshKey }: { refreshKey?: number }) {
             onDelete={handleDelete}
             onFindSimilar={handleFindSimilar}
             onReviewClick={setReviewBook}
+            isDeleting={deletingId === book.id}
           />
         ))}
       </div>
@@ -129,6 +142,42 @@ export function SavedBooksGrid({ refreshKey }: { refreshKey?: number }) {
           bookTitle={reviewBook.title}
           currentUserId={session?.user?.id}
         />
+      )}
+
+      {/* Delete confirmation modal */}
+      {confirmDelete && (
+        <div
+          className="fixed inset-0 z-50 modal-backdrop flex items-center justify-center p-4 animate-fade-in"
+          onClick={(e) => { if (e.target === e.currentTarget) setConfirmDelete(null); }}
+        >
+          <div className="bg-parchment-light border border-gold/30 rounded-xl shadow-2xl w-full max-w-sm p-6 animate-fade-in-up">
+            <h3
+              className="text-lg text-leather-dark mb-2"
+              style={{ fontFamily: "var(--font-playfair), serif" }}
+            >
+              Удалить книгу?
+            </h3>
+            <p className="text-sm text-sepia/70 mb-5 leading-relaxed">
+              «{confirmDelete.title}» будет удалена из вашей коллекции.
+            </p>
+            <div className="flex gap-3">
+              <button
+                onClick={executeDelete}
+                className="flex-1 py-2 bg-burgundy text-parchment-light rounded text-sm tracking-wide hover:bg-burgundy-light transition-colors"
+                style={{ fontFamily: "var(--font-playfair), serif" }}
+              >
+                Удалить
+              </button>
+              <button
+                onClick={() => setConfirmDelete(null)}
+                className="flex-1 py-2 border border-gold/40 text-sepia rounded text-sm tracking-wide hover:bg-parchment-dark transition-colors"
+                style={{ fontFamily: "var(--font-playfair), serif" }}
+              >
+                Отмена
+              </button>
+            </div>
+          </div>
+        </div>
       )}
     </>
   );

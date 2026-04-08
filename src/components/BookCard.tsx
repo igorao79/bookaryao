@@ -62,6 +62,7 @@ interface CollectionProps {
   onDelete: (id: string) => void;
   onFindSimilar?: (book: SavedBook) => void;
   onReviewClick?: (book: SavedBook) => void;
+  isDeleting?: boolean;
 }
 
 function CollectionStars({ value, count }: { value: number; count: number }) {
@@ -205,9 +206,9 @@ function RecommendationCard({ book, onSave, onReject, isSaving, userQuery = "" }
   );
 }
 
-function CollectionCard({ book, onDelete, onFindSimilar, onReviewClick }: CollectionProps) {
+function CollectionCard({ book, onDelete, onFindSimilar, onReviewClick, isDeleting }: CollectionProps) {
   return (
-    <div className="group bg-cream border border-gold/20 rounded-lg overflow-hidden book-shadow hover:book-shadow-hover transition-all duration-300">
+    <div className={`group bg-cream border border-gold/20 rounded-lg overflow-hidden book-shadow hover:book-shadow-hover transition-all duration-300 ${isDeleting ? "animate-delete-out" : ""}`}>
       <div className="relative aspect-[2/3] overflow-hidden">
         {book.coverUrl ? (
           <Image
