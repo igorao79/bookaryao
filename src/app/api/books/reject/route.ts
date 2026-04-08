@@ -11,7 +11,7 @@ import {
   buildSearchBySimilarPrompt,
 } from "@/lib/ai/prompts";
 import { findBook, enrichBookWithCover } from "@/lib/books/search";
-import { appendRejection } from "@/lib/db/userPreferences";
+import { appendRejection, getUserPreferences } from "@/lib/db/userPreferences";
 
 export async function POST(request: Request) {
   const session = await auth();
@@ -66,6 +66,8 @@ export async function POST(request: Request) {
     reason,
   });
 
+  const pastRejections = await getUserPreferences(session.user.id);
+
   // Build new prompt with updated rejected books
   let prompts: { system: string; user: string };
   let userGenres: string[] = [];
@@ -75,14 +77,16 @@ export async function POST(request: Request) {
     prompts = buildSearchFromScratchPrompt(
       originalRequest.genre,
       originalRequest.description,
-      updatedRejected
+      updatedRejected,
+      pastRejections
     );
   } else {
     prompts = buildSearchBySimilarPrompt(
       originalRequest.bookTitle,
       originalRequest.author || undefined,
       originalRequest.whatYouLiked,
-      updatedRejected
+      updatedRejected,
+      pastRejections
     );
   }
 
