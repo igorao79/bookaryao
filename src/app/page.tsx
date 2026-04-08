@@ -21,7 +21,8 @@ export default function Home() {
         {/* Animated bookshelf background */}
         <AnimatedBookshelf />
 
-        <div className="relative z-10 max-w-4xl mx-auto px-4 pt-28 sm:pt-32 pb-16 text-center">
+        <div className="relative z-20 h-full flex flex-col items-center justify-center px-4 text-center">
+          <div className="inline-block backdrop-blur-sm rounded-2xl px-8 py-10 shadow-md" style={{ background: "rgba(245,239,224,0.95)", border: "1px solid rgba(197,165,90,0.25)" }}>
           {/* Top vignette ornament */}
           <div className="divider-ornament mb-8">
             <svg width="280" height="36" viewBox="0 0 280 36" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -124,7 +125,7 @@ export default function Home() {
           </div>
 
           {/* Bottom vignette ornament (flipped copy) */}
-          <div className="divider-ornament mt-16 mb-0">
+          <div className="divider-ornament mt-8 mb-0">
             <svg width="280" height="36" viewBox="0 0 280 36" fill="none" xmlns="http://www.w3.org/2000/svg" style={{ transform: "scaleY(-1)" }}>
               <path d="M140 8c-4 0-7 3-7 7s3 7 7 7 7-3 7-7-3-7-7-7z" fill="#c5a55a" opacity="0.7" />
               <path d="M140 11c-2.2 0-4 1.8-4 4s1.8 4 4 4 4-1.8 4-4-1.8-4-4-4z" fill="#faf7f0" opacity="0.5" />
@@ -152,6 +153,7 @@ export default function Home() {
               <circle cx="160" cy="15" r="1.5" fill="#c5a55a" opacity="0.5" />
               <path d="M80 28c18-6 36-6 60 0 24 6 42 6 60 0" stroke="#c5a55a" strokeWidth="0.8" strokeLinecap="round" opacity="0.3" />
             </svg>
+          </div>
           </div>
         </div>
       </section>

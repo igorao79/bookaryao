@@ -59,7 +59,7 @@ function generateBooks(count: number, seed: number, mobile: boolean): BookDef[] 
   return books;
 }
 
-const ROWS = 6;
+const ROWS = 5;
 const BOOKS_PER_ROW_DESKTOP = 40;
 const BOOKS_PER_ROW_MOBILE = 14;
 const SAFE_ROW_MIN = 4;
