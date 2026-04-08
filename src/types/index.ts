@@ -23,6 +23,10 @@ export interface RejectedBook {
   reason: string;
 }
 
+export interface RejectedBookWithDate extends RejectedBook {
+  rejectedAt: string; // ISO date string
+}
+
 export interface SavedBook {
   id: string;
   userId: string;
