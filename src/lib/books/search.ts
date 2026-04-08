@@ -2,6 +2,9 @@ import type { BookResult } from "@/types";
 import { searchGoogleBooks, getGoogleBookById } from "./googleBooks";
 import { searchOpenLibrary } from "./openLibrary";
 import { searchAniList } from "./anilist";
+import { searchKitsu } from "./kitsu";
+import { searchJikan } from "./jikan";
+import { searchMangaDex } from "./mangadex";
 
 /**
  * Search for a book by query. Tries Google Books first, falls back to Open Library.
@@ -53,11 +56,18 @@ export async function enrichBookWithCover(
     return { ...book, coverUrl: olResults[0].coverUrl };
   }
 
-  // Last resort: AniList (great for manga covers)
-  const anilist = await searchAniList(book.title);
-  if (anilist.coverUrl) {
-    return { ...book, coverUrl: anilist.coverUrl };
-  }
+  // Last resort: fan out to all manga/book cover APIs in parallel
+  const [anilist, kitsu, jikan, mangadex] = await Promise.all([
+    searchAniList(book.title),
+    searchKitsu(book.title),
+    searchJikan(book.title),
+    searchMangaDex(book.title),
+  ]);
+
+  const mangaCover =
+    anilist.coverUrl ?? kitsu ?? jikan ?? mangadex ?? null;
+
+  if (mangaCover) return { ...book, coverUrl: mangaCover };
 
   return book;
 }
